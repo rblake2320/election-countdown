@@ -15,56 +15,74 @@ interface Quote {
   id: string;
   text: string;
   author: string;
+  source: string;
+  year: string;
   affiliation?: "left" | "right" | "neutral";
 }
 
 const QUOTES: Quote[] = [
   {
-    id: "lewis",
-    text: "Democracy is not a state. It is an act, and each generation must do its part to help build what we called the Beloved Community, a nation and world society at peace with itself.",
-    author: "John Lewis",
-    affiliation: "left",
-  },
-  {
-    id: "reagan",
-    text: "Freedom is never more than one generation away from extinction. We didn't pass it to our children in the bloodstream. It must be fought for, protected, and handed on for them to do the same.",
-    author: "Ronald Reagan",
-    affiliation: "right",
-  },
-  {
     id: "kennedy",
     text: "Ask not what your country can do for you – ask what you can do for your country.",
     author: "John F. Kennedy",
+    source: "Inaugural Address",
+    year: "1961",
     affiliation: "left",
   },
   {
     id: "lincoln",
     text: "Government of the people, by the people, for the people, shall not perish from the earth.",
     author: "Abraham Lincoln",
+    source: "Gettysburg Address",
+    year: "1863",
     affiliation: "neutral",
+  },
+  {
+    id: "reagan",
+    text: "Freedom is never more than one generation away from extinction. We didn't pass it to our children in the bloodstream. It must be fought for, protected, and handed on for them to do the same.",
+    author: "Ronald Reagan",
+    source: "Address to the Phoenix Chamber of Commerce",
+    year: "1961",
+    affiliation: "right",
   },
   {
     id: "franklin",
     text: "Those who would give up essential Liberty, to purchase a little temporary Safety, deserve neither Liberty nor Safety.",
     author: "Benjamin Franklin",
+    source: "Reply to the Governor, Pennsylvania Assembly",
+    year: "1755",
     affiliation: "neutral",
   },
   {
     id: "mlk",
     text: "The time is always right to do what is right.",
     author: "Martin Luther King Jr.",
+    source: "Commencement Address, Oberlin College",
+    year: "1965",
     affiliation: "neutral",
   },
   {
     id: "washington",
     text: "Liberty, when it begins to take root, is a plant of rapid growth.",
     author: "George Washington",
+    source: "Letter to James Madison",
+    year: "1788",
     affiliation: "neutral",
   },
   {
-    id: "trump",
-    text: "What separates the winners from the losers is how a person reacts to each new twist of fate.",
-    author: "Donald Trump",
+    id: "fdr",
+    text: "The only thing we have to fear is fear itself.",
+    author: "Franklin D. Roosevelt",
+    source: "First Inaugural Address",
+    year: "1933",
+    affiliation: "left",
+  },
+  {
+    id: "eisenhower",
+    text: "The future of this republic is in the hands of the American voter.",
+    author: "Dwight D. Eisenhower",
+    source: "Campaign Speech",
+    year: "1952",
     affiliation: "right",
   },
 ];
@@ -133,12 +151,17 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
         <p className="text-muted-foreground text-sm leading-relaxed italic font-serif">
           "{currentQuote.text}"
         </p>
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <div className="h-[1px] w-8 bg-border"></div>
-          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
-            {currentQuote.author}
+        <div className="mt-4 flex flex-col items-center gap-1">
+          <div className="flex items-center gap-2">
+            <div className="h-[1px] w-8 bg-border"></div>
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
+              {currentQuote.author}
+            </p>
+            <div className="h-[1px] w-8 bg-border"></div>
+          </div>
+          <p className="text-[9px] text-muted-foreground">
+            {currentQuote.source}, {currentQuote.year}
           </p>
-          <div className="h-[1px] w-8 bg-border"></div>
         </div>
 
         {/* Quote controls */}
