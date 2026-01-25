@@ -4,6 +4,7 @@ import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
 import { VoteIntentForm } from "@/components/vote-intent-form";
 import { AggregateBar } from "@/components/aggregate-bar";
+import { ShareTimestamp } from "@/components/share-timestamp";
 import { Moon, Sun, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -133,8 +134,15 @@ export default function Home() {
 
         {/* Vote Intent CTA */}
         {isAuthenticated ? (
-          <div className="mb-12">
+          <div className="mb-12 flex flex-col items-center gap-6">
             <VoteIntentForm existingIntent={existingIntent} />
+            
+            {/* Share section - only show if user has voted */}
+            {existingIntent?.createdAt && (
+              <div className="w-full max-w-md">
+                <ShareTimestamp joinedAt={existingIntent.createdAt} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="mb-12 text-center">
