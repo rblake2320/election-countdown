@@ -4,8 +4,7 @@ import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
 import { VoteIntentForm } from "@/components/vote-intent-form";
 import { AggregateBar } from "@/components/aggregate-bar";
-import { ShareTimestamp } from "@/components/share-timestamp";
-import { Moon, Sun, LogIn, LogOut, User } from "lucide-react";
+import { Moon, Sun, LogIn, LogOut, User, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -102,6 +101,12 @@ export default function Home() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <a href="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <a href="/api/logout" className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -134,15 +139,8 @@ export default function Home() {
 
         {/* Vote Intent CTA */}
         {isAuthenticated ? (
-          <div className="mb-12 flex flex-col items-center gap-6">
+          <div className="mb-12">
             <VoteIntentForm existingIntent={existingIntent} />
-            
-            {/* Share section - only show if user has voted */}
-            {existingIntent?.createdAt && (
-              <div className="w-full max-w-md">
-                <ShareTimestamp joinedAt={existingIntent.createdAt} />
-              </div>
-            )}
           </div>
         ) : (
           <div className="mb-12 text-center">
