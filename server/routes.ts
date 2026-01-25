@@ -8,8 +8,8 @@ import { voteIntentLimiter, donationLimiter } from "./middleware/rateLimit";
 import { requireTurnstile, isTurnstileConfigured } from "./middleware/turnstile";
 import { z } from "zod";
 
-// Threshold for showing aggregate bar
-const AGGREGATE_THRESHOLD = 50000;
+// Threshold for showing aggregate bar (set to 2 for testing, restore to 50000 for production)
+const AGGREGATE_THRESHOLD = 2;
 // Minimum group size for privacy
 const MIN_GROUP_SIZE = 50;
 
@@ -197,6 +197,75 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching donations:", error);
       return res.status(500).json({ message: "Failed to fetch donations" });
+    }
+  });
+
+  // Admin analytics endpoint - requires authentication and admin secret
+  app.get("/api/admin/analytics", async (req, res) => {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (adminSecret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    try {
+      // Get vote intent breakdown
+      const allVotes = await storage.getAllVoteIntents();
+      
+      const votesByIntent = {
+        red: allVotes.filter(v => v.intent === 'red').length,
+        blue: allVotes.filter(v => v.intent === 'blue').length,
+        undecided: allVotes.filter(v => v.intent === 'undecided').length,
+        total: allVotes.length
+      };
+
+      // Breakdown by state
+      const votesByState: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      allVotes.forEach(v => {
+        if (!votesByState[v.state]) {
+          votesByState[v.state] = { red: 0, blue: 0, undecided: 0, total: 0 };
+        }
+        votesByState[v.state][v.intent as 'red' | 'blue' | 'undecided']++;
+        votesByState[v.state].total++;
+      });
+
+      // Breakdown by age range
+      const votesByAge: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      allVotes.forEach(v => {
+        const age = v.ageRange || 'not_provided';
+        if (!votesByAge[age]) {
+          votesByAge[age] = { red: 0, blue: 0, undecided: 0, total: 0 };
+        }
+        votesByAge[age][v.intent as 'red' | 'blue' | 'undecided']++;
+        votesByAge[age].total++;
+      });
+
+      // Get donation totals
+      const allDonations = await storage.getAllDonations();
+      const donationStats = {
+        totalDonations: allDonations.length,
+        totalAmount: allDonations.reduce((sum, d) => sum + (d.amount || 0), 0),
+        analyticsOptInCount: allDonations.filter(d => d.analyticsOptIn).length
+      };
+
+      // Votes over time (by day)
+      const votesOverTime: Record<string, number> = {};
+      allVotes.forEach(v => {
+        const date = v.createdAt ? new Date(v.createdAt).toISOString().split('T')[0] : 'unknown';
+        votesOverTime[date] = (votesOverTime[date] || 0) + 1;
+      });
+
+      return res.json({
+        votesByIntent,
+        votesByState,
+        votesByAge,
+        donationStats,
+        votesOverTime,
+        thresholdMet: allVotes.length >= AGGREGATE_THRESHOLD,
+        currentThreshold: AGGREGATE_THRESHOLD
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      return res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
 

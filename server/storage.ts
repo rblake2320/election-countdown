@@ -32,6 +32,10 @@ export interface IStorage {
   // User preferences
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   upsertUserPreferences(data: InsertUserPreferences): Promise<UserPreferences>;
+
+  // Admin analytics
+  getAllVoteIntents(): Promise<VoteIntentRecord[]>;
+  getAllDonations(): Promise<Donation[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -119,6 +123,15 @@ export class DatabaseStorage implements IStorage {
       .from(donations)
       .where(eq(donations.stripeSessionId, sessionId));
     return result;
+  }
+
+  // Admin analytics methods
+  async getAllVoteIntents(): Promise<VoteIntentRecord[]> {
+    return db.select().from(voteIntents);
+  }
+
+  async getAllDonations(): Promise<Donation[]> {
+    return db.select().from(donations);
   }
 
   // User preferences
