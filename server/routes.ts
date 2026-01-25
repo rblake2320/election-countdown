@@ -8,8 +8,8 @@ import { voteIntentLimiter, donationLimiter } from "./middleware/rateLimit";
 import { requireTurnstile, isTurnstileConfigured } from "./middleware/turnstile";
 import { z } from "zod";
 
-// Threshold for showing aggregate bar (set to 2 for testing, restore to 50000 for production)
-const AGGREGATE_THRESHOLD = 2;
+// Threshold for showing aggregate bar
+const AGGREGATE_THRESHOLD = 50000;
 // Minimum group size for privacy
 const MIN_GROUP_SIZE = 50;
 
