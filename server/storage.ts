@@ -26,6 +26,8 @@ export interface IStorage {
   // Donations
   createDonation(data: InsertDonation): Promise<Donation>;
   getDonationsByUser(userId: string): Promise<Donation[]>;
+  getDonationPrices(): Promise<any[]>;
+  findDonationByStripeSessionId(sessionId: string): Promise<Donation | undefined>;
 
   // User preferences
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
@@ -94,6 +96,29 @@ export class DatabaseStorage implements IStorage {
 
   async getDonationsByUser(userId: string): Promise<Donation[]> {
     return db.select().from(donations).where(eq(donations.userId, userId));
+  }
+
+  // Stripe data queries
+  async getDonationPrices() {
+    const result = await db.execute(
+      sql`
+        SELECT pr.id, pr.unit_amount, pr.currency, pr.metadata
+        FROM stripe.prices pr
+        JOIN stripe.products p ON pr.product = p.id
+        WHERE p.name = 'Election Countdown Donation'
+          AND pr.active = true
+        ORDER BY pr.unit_amount ASC
+      `
+    );
+    return result.rows;
+  }
+
+  async findDonationByStripeSessionId(sessionId: string): Promise<Donation | undefined> {
+    const [result] = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.stripeSessionId, sessionId));
+    return result;
   }
 
   // User preferences

@@ -2,12 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { insertVoteIntentSchema, insertUserPreferencesSchema } from "@shared/schema";
+import { insertVoteIntentSchema, insertUserPreferencesSchema, insertDonationSchema } from "@shared/schema";
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { voteIntentLimiter, donationLimiter } from "./middleware/rateLimit";
+import { requireTurnstile, isTurnstileConfigured } from "./middleware/turnstile";
 import { z } from "zod";
 
 // Threshold for showing aggregate bar
 const AGGREGATE_THRESHOLD = 50000;
-// Minimum group size for privacy (prevent doxxing by aggregation)
+// Minimum group size for privacy
 const MIN_GROUP_SIZE = 50;
 
 export async function registerRoutes(
@@ -18,12 +21,22 @@ export async function registerRoutes(
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // Get aggregate stats (public endpoint, but gated by threshold)
+  // Get Stripe publishable key (for frontend)
+  app.get("/api/stripe/config", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      return res.json({ publishableKey });
+    } catch (error) {
+      console.error("Error fetching Stripe config:", error);
+      return res.status(500).json({ message: "Stripe not configured" });
+    }
+  });
+
+  // Get aggregate stats (public endpoint, gated by threshold)
   app.get("/api/stats", async (req, res) => {
     try {
       const stats = await storage.getAggregateStats();
       
-      // Only show real stats if we've hit the threshold
       if (stats.total < AGGREGATE_THRESHOLD) {
         return res.json({
           total: stats.total,
@@ -33,7 +46,6 @@ export async function registerRoutes(
         });
       }
 
-      // Calculate percentages
       const redPercent = stats.total > 0 ? (stats.red / stats.total) * 100 : 50;
       const bluePercent = stats.total > 0 ? (stats.blue / stats.total) * 100 : 50;
 
@@ -64,8 +76,8 @@ export async function registerRoutes(
     }
   });
 
-  // Submit or update vote intent
-  app.post("/api/intent", isAuthenticated, async (req: any, res) => {
+  // Submit or update vote intent (with rate limiting and bot protection)
+  app.post("/api/intent", voteIntentLimiter, isAuthenticated, requireTurnstile, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -123,6 +135,68 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error saving preferences:", error);
       return res.status(500).json({ message: "Failed to save preferences" });
+    }
+  });
+
+  // Get donation prices
+  app.get("/api/donation-prices", async (req, res) => {
+    try {
+      const prices = await storage.getDonationPrices();
+      return res.json({ prices });
+    } catch (error) {
+      console.error("Error fetching donation prices:", error);
+      return res.status(500).json({ message: "Failed to fetch prices" });
+    }
+  });
+
+  // Create donation checkout session (with rate limiting and bot protection)
+  app.post("/api/donate", donationLimiter, isAuthenticated, requireTurnstile, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const email = req.user.claims.email;
+      const { priceId, analyticsOptIn } = req.body;
+
+      if (!priceId) {
+        return res.status(400).json({ message: "Price ID required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      // Create checkout session using real price ID
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        customer_email: email,
+        metadata: {
+          userId,
+          analyticsOptIn: analyticsOptIn ? 'true' : 'false',
+        },
+        success_url: `${req.protocol}://${req.get('host')}?donation=success`,
+        cancel_url: `${req.protocol}://${req.get('host')}?donation=canceled`,
+      });
+
+      return res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating donation session:", error);
+      return res.status(500).json({ message: "Failed to create donation session" });
+    }
+  });
+
+  // Get user's donations
+  app.get("/api/donations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const donations = await storage.getDonationsByUser(userId);
+      return res.json({ donations });
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      return res.status(500).json({ message: "Failed to fetch donations" });
     }
   });
 

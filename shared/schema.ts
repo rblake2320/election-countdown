@@ -40,11 +40,12 @@ export const voteIntents = pgTable("vote_intents", {
 export const donations = pgTable("donations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  stripeSessionId: varchar("stripe_session_id").unique(),
   stripePaymentId: varchar("stripe_payment_id"),
-  amount: varchar("amount").notNull(), // Store as string to avoid floating point issues
-  currency: varchar("currency", { length: 3 }).default("USD"),
-  analyticsOptIn: boolean("analytics_opt_in").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  amount: varchar("amount").notNull(), // Store as cents (string for precision)
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  analyticsOptIn: boolean("analytics_opt_in").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // User preferences for customization (quotes, theme, etc.)
