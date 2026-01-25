@@ -1,78 +1,37 @@
 import { useState, useEffect } from "react";
-import { CountdownTimer } from "@/components/countdown-timer";
-import { SettingsPanel, CountdownSettings } from "@/components/settings-panel";
-import { Moon, Sun } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { DualCountdown } from "@/components/dual-countdown";
+import { QuoteDisplay } from "@/components/quote-display";
+import { VoteIntentForm } from "@/components/vote-intent-form";
+import { AggregateBar } from "@/components/aggregate-bar";
+import { Moon, Sun, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
-import { fromZonedTime } from "date-fns-tz";
-
-const DEFAULT_SETTINGS: CountdownSettings = {
-  title: "2026 Midterm Elections",
-  date: "2026-11-03",
-  time: "00:00",
-  timezone: "America/New_York",
-};
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-  const [location] = useLocation();
-  const [settings, setSettings] = useState<CountdownSettings>(DEFAULT_SETTINGS);
   const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [targetDateObj, setTargetDateObj] = useState<Date>(new Date());
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
-  // Load from URL or LocalStorage on mount
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const urlTitle = searchParams.get("title");
-    const urlDate = searchParams.get("date");
-    const urlTime = searchParams.get("time");
-    const urlTimezone = searchParams.get("timezone");
-
-    if (urlTitle && urlDate && urlTime) {
-      setSettings({ 
-        title: urlTitle, 
-        date: urlDate, 
-        time: urlTime,
-        timezone: urlTimezone || "Local"
-      });
-    } else {
-      const saved = localStorage.getItem("election-countdown-settings");
-      if (saved) {
-        try {
-          setSettings(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse saved settings", e);
-        }
-      }
-    }
-    setMounted(true);
-  }, []);
-
-  // Save to LocalStorage whenever settings change
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("election-countdown-settings", JSON.stringify(settings));
-    }
-  }, [settings, mounted]);
-
-  // Calculate target date based on settings
-  useEffect(() => {
-    if (!mounted) return;
-
-    try {
-      const dateTimeString = `${settings.date} ${settings.time}`;
-      
-      if (settings.timezone === "Local") {
-        setTargetDateObj(new Date(`${settings.date}T${settings.time}:00`));
-      } else {
-        // Convert the date/time in specific timezone to a JS Date object (which is UTC)
-        const zonedDate = fromZonedTime(dateTimeString, settings.timezone);
-        setTargetDateObj(zonedDate);
-      }
-    } catch (e) {
-      console.error("Error parsing date:", e);
-    }
-  }, [settings, mounted]);
+  // Fetch user's existing vote intent if authenticated
+  const { data: existingIntent } = useQuery({
+    queryKey: ["/api/intent"],
+    queryFn: async () => {
+      const res = await fetch("/api/intent", { credentials: "include" });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error("Failed to fetch intent");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
 
   // Handle Dark Mode
   useEffect(() => {
@@ -84,8 +43,6 @@ export default function Home() {
   }, [isDark]);
 
   const toggleTheme = () => setIsDark(!isDark);
-
-  if (!mounted) return null;
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden transition-colors duration-500">
@@ -115,36 +72,91 @@ export default function Home() {
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <SettingsPanel settings={settings} onUpdate={setSettings} />
+
+          {/* Auth Section */}
+          {authLoading ? (
+            <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+          ) : isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                    <AvatarFallback>
+                      {user.firstName?.[0] || user.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href="/api/logout" className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild variant="default" size="sm" className="gap-2">
+              <a href="/api/login">
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </a>
+            </Button>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 pb-20">
-        <CountdownTimer 
-          targetDate={targetDateObj.toISOString()} 
-          title={settings.title} 
-        />
-        
-        <div className="mt-20 text-center max-w-lg mx-auto px-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-          <p className="text-muted-foreground text-sm leading-relaxed italic font-serif">
-            "Democracy is not a state. It is an act, and each generation must do its part to help build what we called the Beloved Community, a nation and world society at peace with itself."
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-2">
-             <div className="h-[1px] w-8 bg-border"></div>
-             <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
-              John Lewis
-            </p>
-             <div className="h-[1px] w-8 bg-border"></div>
-          </div>
+      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 pb-24">
+        {/* Dual Countdown */}
+        <div className="mb-24">
+          <DualCountdown />
         </div>
+
+        {/* Aggregate Bar */}
+        <div className="mb-12 w-full">
+          <AggregateBar />
+        </div>
+
+        {/* Vote Intent CTA */}
+        {isAuthenticated ? (
+          <div className="mb-12">
+            <VoteIntentForm existingIntent={existingIntent} />
+          </div>
+        ) : (
+          <div className="mb-12 text-center">
+            <p className="text-muted-foreground text-sm mb-3">
+              Sign in to share your voting intention
+            </p>
+            <Button asChild variant="outline" className="gap-2">
+              <a href="/api/login">
+                <LogIn className="h-4 w-4" />
+                Sign in to participate
+              </a>
+            </Button>
+          </div>
+        )}
+        
+        {/* Quote Display */}
+        <QuoteDisplay />
       </main>
 
       {/* Footer */}
       <footer className="w-full p-6 text-center text-xs text-muted-foreground z-10 border-t border-border/40 bg-background/50 backdrop-blur-sm">
-        <p>
-          Target: {settings.date} {settings.time} ({settings.timezone})
-        </p>
+        <p>© {new Date().getFullYear()} Election Countdown. All calculations based on Eastern Time.</p>
       </footer>
     </div>
   );
