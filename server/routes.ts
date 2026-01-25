@@ -200,11 +200,11 @@ export async function registerRoutes(
     }
   });
 
-  // Admin analytics endpoint - requires authentication and admin secret
-  app.get("/api/admin/analytics", async (req, res) => {
+  // Admin analytics endpoint - requires both authentication AND admin secret
+  app.get("/api/admin/analytics", isAuthenticated, async (req: any, res) => {
     const adminSecret = req.headers['x-admin-secret'];
-    if (adminSecret !== process.env.ADMIN_SECRET) {
-      return res.status(403).json({ message: "Forbidden" });
+    if (!process.env.ADMIN_SECRET || adminSecret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ message: "Forbidden - invalid admin credentials" });
     }
 
     try {
@@ -287,8 +287,9 @@ export async function registerRoutes(
 
       const allVotes = await storage.getAllVoteIntents();
       
-      // Helper to convert percentage to range
+      // Helper to convert percentage to range (handles zero division)
       const toRange = (percent: number): string => {
+        if (isNaN(percent) || !isFinite(percent)) return "0-5%";
         const lower = Math.floor(percent / 5) * 5;
         const upper = lower + 5;
         return `${lower}-${upper}%`;
@@ -296,6 +297,18 @@ export async function registerRoutes(
 
       // Total vote breakdown with ranges
       const total = allVotes.length;
+      
+      // If no votes yet, return empty breakdown
+      if (total === 0) {
+        return res.json({
+          votesByIntent: { redRange: "0-5%", blueRange: "0-5%", undecidedRange: "0-5%", total: 0 },
+          votesByState: {},
+          votesByAge: {},
+          thresholdMet: false,
+          donorTier: totalDonated >= 10000 ? 'premium' : totalDonated >= 2500 ? 'supporter' : 'basic'
+        });
+      }
+      
       const redCount = allVotes.filter(v => v.intent === 'red').length;
       const blueCount = allVotes.filter(v => v.intent === 'blue').length;
       const undecidedCount = allVotes.filter(v => v.intent === 'undecided').length;
