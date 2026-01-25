@@ -34,7 +34,7 @@ import { Vote, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
-const VOTE_INTENTS = ["red", "blue", "undecided"] as const;
+const VOTE_INTENTS = ["red", "blue", "independent", "undecided"] as const;
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
   "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
@@ -49,6 +49,7 @@ const formSchema = z.object({
   ageRange: z.enum(AGE_RANGES).optional(),
   city: z.string().optional(),
   sex: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
+  customCandidate: z.string().max(100).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -60,10 +61,12 @@ interface VoteIntentFormProps {
     ageRange?: string | null;
     city?: string | null;
     sex?: string | null;
+    customCandidate?: string | null;
   } | null;
+  isDonor?: boolean;
 }
 
-export function VoteIntentForm({ existingIntent }: VoteIntentFormProps) {
+export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFormProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -76,6 +79,7 @@ export function VoteIntentForm({ existingIntent }: VoteIntentFormProps) {
       ageRange: (existingIntent?.ageRange as any) || undefined,
       city: existingIntent?.city || "",
       sex: (existingIntent?.sex as any) || undefined,
+      customCandidate: existingIntent?.customCandidate || "",
     },
   });
 
@@ -144,7 +148,7 @@ export function VoteIntentForm({ existingIntent }: VoteIntentFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>How do you plan to vote?</FormLabel>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
                       variant={field.value === "red" ? "default" : "outline"}
@@ -153,21 +157,10 @@ export function VoteIntentForm({ existingIntent }: VoteIntentFormProps) {
                         field.value === "red" && "bg-red-600 hover:bg-red-700 text-white"
                       )}
                       onClick={() => field.onChange("red")}
+                      data-testid="button-intent-red"
                     >
                       <span className="text-lg">🔴</span>
                       <span className="text-xs">Republican</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={field.value === "undecided" ? "default" : "outline"}
-                      className={cn(
-                        "h-16 flex-col gap-1",
-                        field.value === "undecided" && "bg-purple-600 hover:bg-purple-700 text-white"
-                      )}
-                      onClick={() => field.onChange("undecided")}
-                    >
-                      <span className="text-lg">🟣</span>
-                      <span className="text-xs">Undecided</span>
                     </Button>
                     <Button
                       type="button"
@@ -177,15 +170,66 @@ export function VoteIntentForm({ existingIntent }: VoteIntentFormProps) {
                         field.value === "blue" && "bg-blue-600 hover:bg-blue-700 text-white"
                       )}
                       onClick={() => field.onChange("blue")}
+                      data-testid="button-intent-blue"
                     >
                       <span className="text-lg">🔵</span>
                       <span className="text-xs">Democrat</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={field.value === "independent" ? "default" : "outline"}
+                      className={cn(
+                        "h-16 flex-col gap-1",
+                        field.value === "independent" && "bg-green-600 hover:bg-green-700 text-white"
+                      )}
+                      onClick={() => field.onChange("independent")}
+                      data-testid="button-intent-independent"
+                    >
+                      <span className="text-lg">🟢</span>
+                      <span className="text-xs">Independent</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={field.value === "undecided" ? "default" : "outline"}
+                      className={cn(
+                        "h-16 flex-col gap-1",
+                        field.value === "undecided" && "bg-purple-600 hover:bg-purple-700 text-white"
+                      )}
+                      onClick={() => field.onChange("undecided")}
+                      data-testid="button-intent-undecided"
+                    >
+                      <span className="text-lg">🟣</span>
+                      <span className="text-xs">Undecided</span>
                     </Button>
                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Custom Candidate - Donors only */}
+            {isDonor && (
+              <FormField
+                control={form.control}
+                name="customCandidate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Candidate (Donor Perk)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter a specific candidate name" 
+                        {...field} 
+                        data-testid="input-custom-candidate"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      As a donor, you can specify who you're voting for
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* State - Required */}
             <FormField

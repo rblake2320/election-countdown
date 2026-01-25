@@ -10,8 +10,8 @@ export * from "./models/auth";
 export const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
 export type AgeRange = typeof AGE_RANGES[number];
 
-// Vote intent enum values
-export const VOTE_INTENTS = ["red", "blue", "undecided"] as const;
+// Vote intent enum values (red=Republican, blue=Democrat, independent=Third party, undecided=Hasn't decided)
+export const VOTE_INTENTS = ["red", "blue", "independent", "undecided"] as const;
 export type VoteIntent = typeof VOTE_INTENTS[number];
 
 // US States for validation
@@ -27,14 +27,28 @@ export const US_STATES = [
 export const voteIntents = pgTable("vote_intents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
-  intent: varchar("intent", { length: 20 }).notNull(), // red, blue, undecided
+  intent: varchar("intent", { length: 20 }).notNull(), // red, blue, independent, undecided
   ageRange: varchar("age_range", { length: 10 }), // 18-24, 25-34, etc.
   state: varchar("state", { length: 2 }).notNull(), // Required: US state code
   city: varchar("city", { length: 100 }), // Optional
   sex: varchar("sex", { length: 20 }), // Optional: male, female, other, prefer_not_to_say
+  customCandidate: varchar("custom_candidate", { length: 100 }), // Optional: for donors to specify a candidate
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Vote history table - tracks all intent changes over time
+export const voteHistory = pgTable("vote_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  previousIntent: varchar("previous_intent", { length: 20 }), // null for first vote
+  newIntent: varchar("new_intent", { length: 20 }).notNull(),
+  customCandidate: varchar("custom_candidate", { length: 100 }), // Track candidate changes too
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("vote_history_user_idx").on(table.userId),
+  index("vote_history_date_idx").on(table.createdAt),
+]);
 
 // Donations table
 export const donations = pgTable("donations", {
@@ -68,6 +82,12 @@ export const insertVoteIntentSchema = createInsertSchema(voteIntents).omit({
   ageRange: z.enum(AGE_RANGES).optional(),
   state: z.string().length(2),
   sex: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
+  customCandidate: z.string().max(100).optional(),
+});
+
+export const insertVoteHistorySchema = createInsertSchema(voteHistory).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertDonationSchema = createInsertSchema(donations).omit({
@@ -84,6 +104,9 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
 // Types
 export type InsertVoteIntent = z.infer<typeof insertVoteIntentSchema>;
 export type VoteIntentRecord = typeof voteIntents.$inferSelect;
+
+export type InsertVoteHistory = z.infer<typeof insertVoteHistorySchema>;
+export type VoteHistoryRecord = typeof voteHistory.$inferSelect;
 
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;

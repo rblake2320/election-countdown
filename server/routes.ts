@@ -54,6 +54,7 @@ export async function registerRoutes(
         showBar: true,
         red: stats.red,
         blue: stats.blue,
+        independent: stats.independent,
         undecided: stats.undecided,
         redPercent: Math.round(redPercent * 10) / 10,
         bluePercent: Math.round(bluePercent * 10) / 10,
@@ -81,8 +82,23 @@ export async function registerRoutes(
     try {
       const userId = req.user.claims.sub;
       
+      // Get existing intent to track changes
+      const existingIntent = await storage.getVoteIntent(userId);
+      const previousIntent = existingIntent?.intent || null;
+      
+      // Check if user can specify custom candidate (requires $1+ donation)
+      let customCandidate = req.body.customCandidate;
+      if (customCandidate) {
+        const donations = await storage.getDonationsByUser(userId);
+        const totalDonated = donations.reduce((sum, d) => sum + (parseInt(String(d.amount)) || 0), 0);
+        if (totalDonated < 100) { // 100 cents = $1
+          customCandidate = undefined; // Strip custom candidate if not a donor
+        }
+      }
+      
       const parsed = insertVoteIntentSchema.safeParse({
         ...req.body,
+        customCandidate,
         userId,
       });
 
@@ -93,7 +109,7 @@ export async function registerRoutes(
         });
       }
 
-      const result = await storage.upsertVoteIntent(parsed.data);
+      const result = await storage.upsertVoteIntent(parsed.data, previousIntent);
       return res.json(result);
     } catch (error) {
       console.error("Error saving intent:", error);
@@ -214,28 +230,33 @@ export async function registerRoutes(
       const votesByIntent = {
         red: allVotes.filter(v => v.intent === 'red').length,
         blue: allVotes.filter(v => v.intent === 'blue').length,
+        independent: allVotes.filter(v => v.intent === 'independent').length,
         undecided: allVotes.filter(v => v.intent === 'undecided').length,
         total: allVotes.length
       };
 
       // Breakdown by state
-      const votesByState: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      const votesByState: Record<string, { red: number; blue: number; independent: number; undecided: number; total: number }> = {};
       allVotes.forEach(v => {
         if (!votesByState[v.state]) {
-          votesByState[v.state] = { red: 0, blue: 0, undecided: 0, total: 0 };
+          votesByState[v.state] = { red: 0, blue: 0, independent: 0, undecided: 0, total: 0 };
         }
-        votesByState[v.state][v.intent as 'red' | 'blue' | 'undecided']++;
+        if (v.intent === 'red' || v.intent === 'blue' || v.intent === 'independent' || v.intent === 'undecided') {
+          votesByState[v.state][v.intent]++;
+        }
         votesByState[v.state].total++;
       });
 
       // Breakdown by age range
-      const votesByAge: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      const votesByAge: Record<string, { red: number; blue: number; independent: number; undecided: number; total: number }> = {};
       allVotes.forEach(v => {
         const age = v.ageRange || 'not_provided';
         if (!votesByAge[age]) {
-          votesByAge[age] = { red: 0, blue: 0, undecided: 0, total: 0 };
+          votesByAge[age] = { red: 0, blue: 0, independent: 0, undecided: 0, total: 0 };
         }
-        votesByAge[age][v.intent as 'red' | 'blue' | 'undecided']++;
+        if (v.intent === 'red' || v.intent === 'blue' || v.intent === 'independent' || v.intent === 'undecided') {
+          votesByAge[age][v.intent]++;
+        }
         votesByAge[age].total++;
       });
 
@@ -254,12 +275,32 @@ export async function registerRoutes(
         votesOverTime[date] = (votesOverTime[date] || 0) + 1;
       });
 
+      // Get vote switching statistics
+      const voteSwitchStats = await storage.getVoteSwitchStats();
+      const switchingUsers = voteSwitchStats.length;
+      const totalSwitches = voteSwitchStats.reduce((sum, s) => sum + Number(s.switchCount), 0);
+      
+      // Custom candidates from donors
+      const customCandidates: Record<string, number> = {};
+      allVotes.forEach(v => {
+        if (v.customCandidate) {
+          const candidate = v.customCandidate.toLowerCase().trim();
+          customCandidates[candidate] = (customCandidates[candidate] || 0) + 1;
+        }
+      });
+
       return res.json({
         votesByIntent,
         votesByState,
         votesByAge,
         donationStats,
         votesOverTime,
+        voteSwitching: {
+          usersWhoSwitched: switchingUsers,
+          totalSwitches: totalSwitches,
+          topSwitchers: voteSwitchStats.slice(0, 10)
+        },
+        customCandidates,
         thresholdMet: allVotes.length >= AGGREGATE_THRESHOLD,
         currentThreshold: AGGREGATE_THRESHOLD
       });
@@ -301,7 +342,7 @@ export async function registerRoutes(
       // If no votes yet, return empty breakdown
       if (total === 0) {
         return res.json({
-          votesByIntent: { redRange: "0-5%", blueRange: "0-5%", undecidedRange: "0-5%", total: 0 },
+          votesByIntent: { redRange: "0-5%", blueRange: "0-5%", independentRange: "0-5%", undecidedRange: "0-5%", total: 0 },
           votesByState: {},
           votesByAge: {},
           thresholdMet: false,
@@ -311,31 +352,36 @@ export async function registerRoutes(
       
       const redCount = allVotes.filter(v => v.intent === 'red').length;
       const blueCount = allVotes.filter(v => v.intent === 'blue').length;
+      const independentCount = allVotes.filter(v => v.intent === 'independent').length;
       const undecidedCount = allVotes.filter(v => v.intent === 'undecided').length;
       
       const votesByIntent = {
         redRange: toRange((redCount / total) * 100),
         blueRange: toRange((blueCount / total) * 100),
+        independentRange: toRange((independentCount / total) * 100),
         undecidedRange: toRange((undecidedCount / total) * 100),
         total: total
       };
 
       // Breakdown by state (only show states with MIN_GROUP_SIZE+ votes)
-      const stateGroups: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      const stateGroups: Record<string, { red: number; blue: number; independent: number; undecided: number; total: number }> = {};
       allVotes.forEach(v => {
         if (!stateGroups[v.state]) {
-          stateGroups[v.state] = { red: 0, blue: 0, undecided: 0, total: 0 };
+          stateGroups[v.state] = { red: 0, blue: 0, independent: 0, undecided: 0, total: 0 };
         }
-        stateGroups[v.state][v.intent as 'red' | 'blue' | 'undecided']++;
+        if (v.intent === 'red' || v.intent === 'blue' || v.intent === 'independent' || v.intent === 'undecided') {
+          stateGroups[v.state][v.intent]++;
+        }
         stateGroups[v.state].total++;
       });
       
-      const votesByState: Record<string, { redRange: string; blueRange: string; undecidedRange: string; total: string }> = {};
+      const votesByState: Record<string, { redRange: string; blueRange: string; independentRange: string; undecidedRange: string; total: string }> = {};
       Object.entries(stateGroups).forEach(([state, data]) => {
         if (data.total >= MIN_GROUP_SIZE) {
           votesByState[state] = {
             redRange: toRange((data.red / data.total) * 100),
             blueRange: toRange((data.blue / data.total) * 100),
+            independentRange: toRange((data.independent / data.total) * 100),
             undecidedRange: toRange((data.undecided / data.total) * 100),
             total: data.total >= 1000 ? `${Math.floor(data.total / 1000)}k+` : `${Math.floor(data.total / 10) * 10}+`
           };
@@ -343,22 +389,25 @@ export async function registerRoutes(
       });
 
       // Breakdown by age (only show groups with MIN_GROUP_SIZE+ votes)
-      const ageGroups: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      const ageGroups: Record<string, { red: number; blue: number; independent: number; undecided: number; total: number }> = {};
       allVotes.forEach(v => {
         const age = v.ageRange || 'not_provided';
         if (!ageGroups[age]) {
-          ageGroups[age] = { red: 0, blue: 0, undecided: 0, total: 0 };
+          ageGroups[age] = { red: 0, blue: 0, independent: 0, undecided: 0, total: 0 };
         }
-        ageGroups[age][v.intent as 'red' | 'blue' | 'undecided']++;
+        if (v.intent === 'red' || v.intent === 'blue' || v.intent === 'independent' || v.intent === 'undecided') {
+          ageGroups[age][v.intent]++;
+        }
         ageGroups[age].total++;
       });
       
-      const votesByAge: Record<string, { redRange: string; blueRange: string; undecidedRange: string; total: string }> = {};
+      const votesByAge: Record<string, { redRange: string; blueRange: string; independentRange: string; undecidedRange: string; total: string }> = {};
       Object.entries(ageGroups).forEach(([age, data]) => {
         if (data.total >= MIN_GROUP_SIZE) {
           votesByAge[age] = {
             redRange: toRange((data.red / data.total) * 100),
             blueRange: toRange((data.blue / data.total) * 100),
+            independentRange: toRange((data.independent / data.total) * 100),
             undecidedRange: toRange((data.undecided / data.total) * 100),
             total: data.total >= 1000 ? `${Math.floor(data.total / 1000)}k+` : `${Math.floor(data.total / 10) * 10}+`
           };

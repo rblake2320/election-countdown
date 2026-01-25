@@ -1,11 +1,14 @@
 import { db } from "./db";
-import { eq, sql, count } from "drizzle-orm";
+import { eq, sql, count, desc } from "drizzle-orm";
 import {
   voteIntents,
+  voteHistory,
   donations,
   userPreferences,
   type InsertVoteIntent,
   type VoteIntentRecord,
+  type InsertVoteHistory,
+  type VoteHistoryRecord,
   type InsertDonation,
   type Donation,
   type InsertUserPreferences,
@@ -15,13 +18,20 @@ import {
 export interface IStorage {
   // Vote intents
   getVoteIntent(userId: string): Promise<VoteIntentRecord | undefined>;
-  upsertVoteIntent(data: InsertVoteIntent): Promise<VoteIntentRecord>;
+  upsertVoteIntent(data: InsertVoteIntent, previousIntent?: string | null): Promise<VoteIntentRecord>;
   getAggregateStats(): Promise<{
     total: number;
     red: number;
     blue: number;
+    independent: number;
     undecided: number;
   }>;
+
+  // Vote history
+  logVoteChange(data: InsertVoteHistory): Promise<VoteHistoryRecord>;
+  getVoteHistory(userId: string): Promise<VoteHistoryRecord[]>;
+  getAllVoteHistory(): Promise<VoteHistoryRecord[]>;
+  getVoteSwitchStats(): Promise<{ userId: string; switchCount: number }[]>;
 
   // Donations
   createDonation(data: InsertDonation): Promise<Donation>;
@@ -48,7 +58,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async upsertVoteIntent(data: InsertVoteIntent): Promise<VoteIntentRecord> {
+  async upsertVoteIntent(data: InsertVoteIntent, previousIntent?: string | null): Promise<VoteIntentRecord> {
     const [result] = await db
       .insert(voteIntents)
       .values(data)
@@ -60,10 +70,20 @@ export class DatabaseStorage implements IStorage {
           state: data.state,
           city: data.city,
           sex: data.sex,
+          customCandidate: data.customCandidate,
           updatedAt: new Date(),
         },
       })
       .returning();
+    
+    // Log the vote change to history
+    await this.logVoteChange({
+      userId: data.userId,
+      previousIntent: previousIntent || null,
+      newIntent: data.intent,
+      customCandidate: data.customCandidate || null,
+    });
+    
     return result;
   }
 
@@ -71,6 +91,7 @@ export class DatabaseStorage implements IStorage {
     total: number;
     red: number;
     blue: number;
+    independent: number;
     undecided: number;
   }> {
     const results = await db
@@ -81,15 +102,43 @@ export class DatabaseStorage implements IStorage {
       .from(voteIntents)
       .groupBy(voteIntents.intent);
 
-    const stats = { total: 0, red: 0, blue: 0, undecided: 0 };
+    const stats = { total: 0, red: 0, blue: 0, independent: 0, undecided: 0 };
     for (const row of results) {
       const c = Number(row.count);
       stats.total += c;
       if (row.intent === "red") stats.red = c;
       else if (row.intent === "blue") stats.blue = c;
+      else if (row.intent === "independent") stats.independent = c;
       else if (row.intent === "undecided") stats.undecided = c;
     }
     return stats;
+  }
+
+  // Vote history methods
+  async logVoteChange(data: InsertVoteHistory): Promise<VoteHistoryRecord> {
+    const [result] = await db.insert(voteHistory).values(data).returning();
+    return result;
+  }
+
+  async getVoteHistory(userId: string): Promise<VoteHistoryRecord[]> {
+    return db.select().from(voteHistory).where(eq(voteHistory.userId, userId)).orderBy(desc(voteHistory.createdAt));
+  }
+
+  async getAllVoteHistory(): Promise<VoteHistoryRecord[]> {
+    return db.select().from(voteHistory).orderBy(desc(voteHistory.createdAt));
+  }
+
+  async getVoteSwitchStats(): Promise<{ userId: string; switchCount: number }[]> {
+    const result = await db.execute(
+      sql`
+        SELECT user_id as "userId", COUNT(*) - 1 as "switchCount"
+        FROM vote_history
+        GROUP BY user_id
+        HAVING COUNT(*) > 1
+        ORDER BY "switchCount" DESC
+      `
+    );
+    return result.rows as { userId: string; switchCount: number }[];
   }
 
   // Donations
