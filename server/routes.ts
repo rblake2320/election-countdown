@@ -243,7 +243,7 @@ export async function registerRoutes(
       const allDonations = await storage.getAllDonations();
       const donationStats = {
         totalDonations: allDonations.length,
-        totalAmount: allDonations.reduce((sum, d) => sum + (d.amount || 0), 0),
+        totalAmount: allDonations.reduce((sum, d) => sum + (parseInt(String(d.amount)) || 0), 0),
         analyticsOptInCount: allDonations.filter(d => d.analyticsOptIn).length
       };
 
@@ -265,6 +265,102 @@ export async function registerRoutes(
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
+      return res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Donor analytics endpoint - requires $1+ donation to access
+  app.get("/api/donor/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user has made at least $1 donation
+      const userDonations = await storage.getDonationsByUser(userId);
+      const totalDonated = userDonations.reduce((sum, d) => sum + (parseInt(String(d.amount)) || 0), 0);
+      
+      if (totalDonated < 100) { // 100 cents = $1
+        return res.status(403).json({ 
+          message: "Donate at least $1 to access detailed analytics",
+          totalDonated: totalDonated / 100
+        });
+      }
+
+      const allVotes = await storage.getAllVoteIntents();
+      
+      // Helper to convert percentage to range
+      const toRange = (percent: number): string => {
+        const lower = Math.floor(percent / 5) * 5;
+        const upper = lower + 5;
+        return `${lower}-${upper}%`;
+      };
+
+      // Total vote breakdown with ranges
+      const total = allVotes.length;
+      const redCount = allVotes.filter(v => v.intent === 'red').length;
+      const blueCount = allVotes.filter(v => v.intent === 'blue').length;
+      const undecidedCount = allVotes.filter(v => v.intent === 'undecided').length;
+      
+      const votesByIntent = {
+        redRange: toRange((redCount / total) * 100),
+        blueRange: toRange((blueCount / total) * 100),
+        undecidedRange: toRange((undecidedCount / total) * 100),
+        total: total
+      };
+
+      // Breakdown by state (only show states with MIN_GROUP_SIZE+ votes)
+      const stateGroups: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      allVotes.forEach(v => {
+        if (!stateGroups[v.state]) {
+          stateGroups[v.state] = { red: 0, blue: 0, undecided: 0, total: 0 };
+        }
+        stateGroups[v.state][v.intent as 'red' | 'blue' | 'undecided']++;
+        stateGroups[v.state].total++;
+      });
+      
+      const votesByState: Record<string, { redRange: string; blueRange: string; undecidedRange: string; total: string }> = {};
+      Object.entries(stateGroups).forEach(([state, data]) => {
+        if (data.total >= MIN_GROUP_SIZE) {
+          votesByState[state] = {
+            redRange: toRange((data.red / data.total) * 100),
+            blueRange: toRange((data.blue / data.total) * 100),
+            undecidedRange: toRange((data.undecided / data.total) * 100),
+            total: data.total >= 1000 ? `${Math.floor(data.total / 1000)}k+` : `${Math.floor(data.total / 10) * 10}+`
+          };
+        }
+      });
+
+      // Breakdown by age (only show groups with MIN_GROUP_SIZE+ votes)
+      const ageGroups: Record<string, { red: number; blue: number; undecided: number; total: number }> = {};
+      allVotes.forEach(v => {
+        const age = v.ageRange || 'not_provided';
+        if (!ageGroups[age]) {
+          ageGroups[age] = { red: 0, blue: 0, undecided: 0, total: 0 };
+        }
+        ageGroups[age][v.intent as 'red' | 'blue' | 'undecided']++;
+        ageGroups[age].total++;
+      });
+      
+      const votesByAge: Record<string, { redRange: string; blueRange: string; undecidedRange: string; total: string }> = {};
+      Object.entries(ageGroups).forEach(([age, data]) => {
+        if (data.total >= MIN_GROUP_SIZE) {
+          votesByAge[age] = {
+            redRange: toRange((data.red / data.total) * 100),
+            blueRange: toRange((data.blue / data.total) * 100),
+            undecidedRange: toRange((data.undecided / data.total) * 100),
+            total: data.total >= 1000 ? `${Math.floor(data.total / 1000)}k+` : `${Math.floor(data.total / 10) * 10}+`
+          };
+        }
+      });
+
+      return res.json({
+        votesByIntent,
+        votesByState,
+        votesByAge,
+        thresholdMet: allVotes.length >= AGGREGATE_THRESHOLD,
+        donorTier: totalDonated >= 10000 ? 'premium' : totalDonated >= 2500 ? 'supporter' : 'basic'
+      });
+    } catch (error) {
+      console.error("Error fetching donor analytics:", error);
       return res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });

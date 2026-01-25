@@ -13,6 +13,15 @@ interface StatsData {
   undecided?: number;
   redPercent?: number;
   bluePercent?: number;
+  redRange?: string;
+  blueRange?: string;
+}
+
+// Convert exact percentage to a range for privacy (e.g., 47.3 -> "45-50%")
+function toPercentRange(percent: number): string {
+  const lower = Math.floor(percent / 5) * 5;
+  const upper = lower + 5;
+  return `${lower}-${upper}%`;
 }
 
 export function AggregateBar() {
@@ -79,7 +88,7 @@ export function AggregateBar() {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <span className="text-white text-xs font-bold drop-shadow">
-            {stats.redPercent?.toFixed(1)}%
+            {stats.redRange || toPercentRange(stats.redPercent || 0)}
           </span>
         </motion.div>
 
@@ -91,7 +100,7 @@ export function AggregateBar() {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <span className="text-white text-xs font-bold drop-shadow">
-            {stats.bluePercent?.toFixed(1)}%
+            {stats.blueRange || toPercentRange(stats.bluePercent || 0)}
           </span>
         </motion.div>
       </div>
