@@ -156,7 +156,6 @@ export function DualCountdown() {
           <ChevronUp className="h-5 w-5" />
         </Button>
       </div>
-
       {/* Main countdown with animation */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -173,7 +172,6 @@ export function DualCountdown() {
           />
         </motion.div>
       </AnimatePresence>
-
       {/* Down arrow */}
       <div className="absolute left-1/2 -translate-x-1/2 -bottom-12 flex flex-col items-center gap-1 z-20">
         <Button
@@ -187,7 +185,6 @@ export function DualCountdown() {
           <ChevronDown className="h-5 w-5" />
         </Button>
       </div>
-
       {/* Election dots indicator */}
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[-60px] flex gap-2 z-20">
         {ELECTIONS.map((election, index) => (
@@ -205,11 +202,8 @@ export function DualCountdown() {
           />
         ))}
       </div>
-
       {/* Helper text */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">
-        Use ↑↓ keys, scroll, or swipe to navigate
-      </div>
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">Use ↑↓ keys, Flip between Mid Term and Presidential </div>
     </div>
   );
 }
