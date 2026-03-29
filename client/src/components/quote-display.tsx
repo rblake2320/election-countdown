@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface Quote {
+interface QuoteItem {
   id: string;
   text: string;
   author: string;
@@ -20,7 +20,7 @@ interface Quote {
   affiliation?: "left" | "right" | "neutral";
 }
 
-const QUOTES: Quote[] = [
+const QUOTES: QuoteItem[] = [
   {
     id: "kennedy",
     text: "Ask not what your country can do for you – ask what you can do for your country.",
@@ -88,18 +88,26 @@ const QUOTES: Quote[] = [
 ];
 
 interface QuoteDisplayProps {
+  isHidden: boolean;
+  onHide: () => void;
+  onShow: () => void;
   preferredQuote?: string | null;
   onPreferenceChange?: (quoteId: string | null) => void;
   isAuthenticated?: boolean;
 }
 
-export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticated }: QuoteDisplayProps) {
-  const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
-  const [isHidden, setIsHidden] = useState(false);
+export function QuoteDisplay({
+  isHidden,
+  onHide,
+  onShow,
+  preferredQuote,
+  onPreferenceChange,
+  isAuthenticated,
+}: QuoteDisplayProps) {
+  const [currentQuote, setCurrentQuote] = useState<QuoteItem | null>(null);
 
   useEffect(() => {
     if (preferredQuote === "none") {
-      setIsHidden(true);
       return;
     }
 
@@ -107,15 +115,12 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
       const quote = QUOTES.find((q) => q.id === preferredQuote);
       if (quote) {
         setCurrentQuote(quote);
-        setIsHidden(false);
         return;
       }
     }
 
-    // Random quote
     const randomIndex = Math.floor(Math.random() * QUOTES.length);
     setCurrentQuote(QUOTES[randomIndex]);
-    setIsHidden(false);
   }, [preferredQuote]);
 
   const shuffleQuote = () => {
@@ -125,14 +130,16 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
   };
 
   const hideQuotes = () => {
-    setIsHidden(true);
+    onHide();
     onPreferenceChange?.("none");
   };
 
   const showQuotes = () => {
-    const randomIndex = Math.floor(Math.random() * QUOTES.length);
-    setCurrentQuote(QUOTES[randomIndex]);
-    setIsHidden(false);
+    if (!currentQuote) {
+      const randomIndex = Math.floor(Math.random() * QUOTES.length);
+      setCurrentQuote(QUOTES[randomIndex]);
+    }
+    onShow();
     onPreferenceChange?.(null);
   };
 
@@ -225,7 +232,11 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={hideQuotes} className="text-xs text-destructive" data-testid="menu-item-hide-quotes">
+              <DropdownMenuItem
+                onClick={hideQuotes}
+                className="text-xs text-destructive"
+                data-testid="menu-item-hide-quotes"
+              >
                 Hide Quotes
               </DropdownMenuItem>
             </DropdownMenuContent>

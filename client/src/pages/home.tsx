@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
+  const [quoteHidden, setQuoteHidden] = useState(false);
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
   // Fetch user's existing vote intent if authenticated
@@ -157,7 +158,11 @@ export default function Home() {
         )}
         
         {/* Quote Display */}
-        <QuoteDisplay />
+        <QuoteDisplay
+          isHidden={quoteHidden}
+          onHide={() => setQuoteHidden(true)}
+          onShow={() => setQuoteHidden(false)}
+        />
       </main>
 
       {/* Footer */}
