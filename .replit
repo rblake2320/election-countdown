@@ -47,3 +47,7 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "stripe:2.0.0"]
 
 [userenv.development]
 ADMIN_SECRET = "testing-admin-secret-12345"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
