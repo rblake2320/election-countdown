@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -35,7 +35,10 @@ export const voteIntents = pgTable("vote_intents", {
   customCandidate: varchar("custom_candidate", { length: 100 }), // Optional: for donors to specify a candidate
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("vote_intents_state_idx").on(table.state),
+  index("vote_intents_party_idx").on(table.intent),
+]);
 
 // Vote history table - tracks all intent changes over time
 export const voteHistory = pgTable("vote_history", {
@@ -60,7 +63,9 @@ export const donations = pgTable("donations", {
   currency: varchar("currency", { length: 3 }).notNull().default("USD"),
   analyticsOptIn: boolean("analytics_opt_in").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("donations_user_id_idx").on(table.userId),
+]);
 
 // User preferences for customization (quotes, theme, etc.)
 export const userPreferences = pgTable("user_preferences", {
@@ -71,6 +76,30 @@ export const userPreferences = pgTable("user_preferences", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// User sessions table - tracks login events and session duration
+export const userSessions = pgTable("user_sessions_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  loginAt: timestamp("login_at").defaultNow().notNull(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+  durationSeconds: integer("duration_seconds").default(0),
+}, (table) => [
+  index("user_sessions_user_idx").on(table.userId),
+  index("user_sessions_login_idx").on(table.loginAt),
+]);
+
+// Countdown flips table - tracks when users switch between 2026 and 2028 views
+export const countdownFlips = pgTable("countdown_flips", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"), // nullable for anonymous tracking
+  fromYear: varchar("from_year", { length: 10 }).notNull(),
+  toYear: varchar("to_year", { length: 10 }).notNull(),
+  flippedAt: timestamp("flipped_at").defaultNow().notNull(),
+}, (table) => [
+  index("countdown_flips_date_idx").on(table.flippedAt),
+  index("countdown_flips_user_idx").on(table.userId),
+]);
 
 // Zod schemas for validation
 export const insertVoteIntentSchema = createInsertSchema(voteIntents).omit({
@@ -101,6 +130,15 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updatedAt: true,
 });
 
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+});
+
+export const insertCountdownFlipSchema = createInsertSchema(countdownFlips).omit({
+  id: true,
+  flippedAt: true,
+});
+
 // Types
 export type InsertVoteIntent = z.infer<typeof insertVoteIntentSchema>;
 export type VoteIntentRecord = typeof voteIntents.$inferSelect;
@@ -113,3 +151,9 @@ export type Donation = typeof donations.$inferSelect;
 
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = typeof userSessions.$inferSelect;
+
+export type InsertCountdownFlip = z.infer<typeof insertCountdownFlipSchema>;
+export type CountdownFlip = typeof countdownFlips.$inferSelect;

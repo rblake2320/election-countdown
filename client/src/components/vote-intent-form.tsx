@@ -30,7 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Vote, Loader2 } from "lucide-react";
+import { Vote, Loader2, Share2, Twitter, Link2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
@@ -42,6 +42,13 @@ const US_STATES = [
   "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC"
 ] as const;
+
+const INTENT_LABELS: Record<string, string> = {
+  red: "Republican",
+  blue: "Democrat",
+  independent: "Independent",
+  undecided: "Undecided",
+};
 
 const formSchema = z.object({
   intent: z.enum(VOTE_INTENTS),
@@ -66,8 +73,75 @@ interface VoteIntentFormProps {
   isDonor?: boolean;
 }
 
+function SharePrompt({ intent, onClose }: { intent: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const intentLabel = INTENT_LABELS[intent] || intent;
+  const siteUrl = window.location.origin;
+  const shareMessage = `I just recorded my voting intention as ${intentLabel} on Election Countdown. Join me and make your voice count!`;
+
+  const handleTwitterShare = () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}&url=${encodeURIComponent(siteUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${shareMessage} ${siteUrl}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="mt-4 p-4 rounded-lg border border-primary/20 bg-gradient-to-br from-background to-muted/30">
+      <div className="flex items-center gap-2 mb-2">
+        <Share2 className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold">Spread the Word</span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Your intent has been recorded! Share it to encourage others to participate.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleTwitterShare}
+          className="gap-2 text-xs"
+          data-testid="button-post-vote-share-twitter"
+        >
+          <Twitter className="h-3 w-3" />
+          Share on X
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyLink}
+          className="gap-2 text-xs"
+          data-testid="button-post-vote-copy-link"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
+          {copied ? "Copied!" : "Copy Link"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="text-xs text-muted-foreground ml-auto"
+          data-testid="button-post-vote-dismiss"
+        >
+          Dismiss
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFormProps) {
   const [open, setOpen] = useState(false);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
+  const [submittedIntent, setSubmittedIntent] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -96,14 +170,15 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/intent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
         title: "Intent Saved",
         description: "Your voting intention has been recorded.",
       });
-      setOpen(false);
+      setSubmittedIntent(variables.intent);
+      setShowSharePrompt(true);
     },
     onError: () => {
       toast({
@@ -120,8 +195,16 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
 
   const selectedIntent = form.watch("intent");
 
+  const handleClose = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setShowSharePrompt(false);
+      setSubmittedIntent(null);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
@@ -331,6 +414,17 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {existingIntent ? "Update My Intent" : "Submit My Intent"}
             </Button>
+
+            {/* Share prompt appears inline after successful submission */}
+            {showSharePrompt && submittedIntent && (
+              <SharePrompt
+                intent={submittedIntent}
+                onClose={() => {
+                  setShowSharePrompt(false);
+                  setOpen(false);
+                }}
+              />
+            )}
           </form>
         </Form>
       </DialogContent>

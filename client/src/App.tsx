@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Profile from "@/pages/profile";
 import DonorAnalytics from "@/pages/donor-analytics";
+import AdminAnalytics from "@/pages/admin-analytics";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/profile" component={Profile} />
       <Route path="/donor-analytics" component={DonorAnalytics} />
+      <Route path="/admin" component={AdminAnalytics} />
       <Route component={NotFound} />
     </Switch>
   );

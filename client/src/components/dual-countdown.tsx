@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { CountdownTimer } from "./countdown-timer";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
@@ -13,6 +13,7 @@ const ELECTIONS = [
     date: "2026-11-03",
     time: "00:00",
     timezone: "America/New_York",
+    year: "2026",
   },
   {
     id: "presidential-2028",
@@ -21,8 +22,21 @@ const ELECTIONS = [
     date: "2028-11-07",
     time: "00:00",
     timezone: "America/New_York",
+    year: "2028",
   },
 ];
+
+async function trackFlip(fromYear: string, toYear: string) {
+  try {
+    await fetch("/api/track/flip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromYear, toYear }),
+    });
+  } catch {
+    // Silently ignore tracking errors
+  }
+}
 
 export function DualCountdown() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -30,13 +44,23 @@ export function DualCountdown() {
   const touchStartY = useRef<number>(0);
   const activeElection = ELECTIONS[activeIndex];
 
-  const flipUp = () => {
-    setActiveIndex((prev) => (prev === 0 ? ELECTIONS.length - 1 : prev - 1));
-  };
+  const flipTo = useCallback((newIndex: number) => {
+    if (newIndex === activeIndex) return;
+    const fromYear = ELECTIONS[activeIndex].year;
+    const toYear = ELECTIONS[newIndex].year;
+    setActiveIndex(newIndex);
+    trackFlip(fromYear, toYear);
+  }, [activeIndex]);
 
-  const flipDown = () => {
-    setActiveIndex((prev) => (prev === ELECTIONS.length - 1 ? 0 : prev + 1));
-  };
+  const flipUp = useCallback(() => {
+    const newIndex = activeIndex === 0 ? ELECTIONS.length - 1 : activeIndex - 1;
+    flipTo(newIndex);
+  }, [activeIndex, flipTo]);
+
+  const flipDown = useCallback(() => {
+    const newIndex = activeIndex === ELECTIONS.length - 1 ? 0 : activeIndex + 1;
+    flipTo(newIndex);
+  }, [activeIndex, flipTo]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -52,7 +76,7 @@ export function DualCountdown() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex]);
+  }, [flipUp, flipDown]);
 
   // Scroll navigation (mouse wheel) - only when hovering
   useEffect(() => {
@@ -71,13 +95,8 @@ export function DualCountdown() {
     };
 
     const handleWheel = (e: WheelEvent) => {
-      // Only intercept wheel events when hovering over the countdown
       if (!isHovering) return;
-
-      // Prevent default scroll behavior
       e.preventDefault();
-      
-      // Debounce scroll events
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         if (e.deltaY < 0) {
@@ -98,7 +117,7 @@ export function DualCountdown() {
       container.removeEventListener("wheel", handleWheel);
       clearTimeout(scrollTimeout);
     };
-  }, [activeIndex]);
+  }, [flipUp, flipDown]);
 
   // Touch swipe navigation
   useEffect(() => {
@@ -113,13 +132,10 @@ export function DualCountdown() {
       const touchEndY = e.changedTouches[0].clientY;
       const diff = touchStartY.current - touchEndY;
 
-      // Swipe threshold: 50px
       if (Math.abs(diff) > 50) {
         if (diff > 0) {
-          // Swipe up
           flipDown();
         } else {
-          // Swipe down
           flipUp();
         }
       }
@@ -132,7 +148,7 @@ export function DualCountdown() {
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [activeIndex]);
+  }, [flipUp, flipDown]);
 
   // Convert to target date
   const targetDateISO = `${activeElection.date}T${activeElection.time}:00`;
@@ -190,7 +206,7 @@ export function DualCountdown() {
         {ELECTIONS.map((election, index) => (
           <button
             key={election.id}
-            onClick={() => setActiveIndex(index)}
+            onClick={() => flipTo(index)}
             className={cn(
               "w-2 h-2 rounded-full transition-all duration-300",
               index === activeIndex
