@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RefreshCw, Settings2 } from "lucide-react";
+import { X, RefreshCw, Settings2, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -107,6 +107,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
       const quote = QUOTES.find((q) => q.id === preferredQuote);
       if (quote) {
         setCurrentQuote(quote);
+        setIsHidden(false);
         return;
       }
     }
@@ -114,6 +115,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
     // Random quote
     const randomIndex = Math.floor(Math.random() * QUOTES.length);
     setCurrentQuote(QUOTES[randomIndex]);
+    setIsHidden(false);
   }, [preferredQuote]);
 
   const shuffleQuote = () => {
@@ -127,6 +129,13 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
     onPreferenceChange?.("none");
   };
 
+  const showQuotes = () => {
+    const randomIndex = Math.floor(Math.random() * QUOTES.length);
+    setCurrentQuote(QUOTES[randomIndex]);
+    setIsHidden(false);
+    onPreferenceChange?.(null);
+  };
+
   const selectQuote = (quoteId: string) => {
     const quote = QUOTES.find((q) => q.id === quoteId);
     if (quote) {
@@ -135,7 +144,21 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
     }
   };
 
-  if (isHidden || !currentQuote) {
+  if (isHidden) {
+    return (
+      <button
+        onClick={showQuotes}
+        className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-200 flex items-center gap-1.5 py-1"
+        data-testid="button-show-quote"
+        aria-label="Show quote"
+      >
+        <Quote className="h-3 w-3" />
+        Show quote
+      </button>
+    );
+  }
+
+  if (!currentQuote) {
     return null;
   }
 
@@ -172,6 +195,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
             className="h-7 w-7 rounded-full"
             onClick={shuffleQuote}
             aria-label="Show different quote"
+            data-testid="button-shuffle-quote"
           >
             <RefreshCw className="h-3 w-3" />
           </Button>
@@ -183,6 +207,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
                 size="icon"
                 className="h-7 w-7 rounded-full"
                 aria-label="Quote settings"
+                data-testid="button-quote-settings"
               >
                 <Settings2 className="h-3 w-3" />
               </Button>
@@ -200,7 +225,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={hideQuotes} className="text-xs text-destructive">
+              <DropdownMenuItem onClick={hideQuotes} className="text-xs text-destructive" data-testid="menu-item-hide-quotes">
                 Hide Quotes
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -212,6 +237,7 @@ export function QuoteDisplay({ preferredQuote, onPreferenceChange, isAuthenticat
             className="h-7 w-7 rounded-full"
             onClick={hideQuotes}
             aria-label="Hide quote"
+            data-testid="button-hide-quote"
           >
             <X className="h-3 w-3" />
           </Button>

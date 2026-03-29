@@ -54,7 +54,7 @@ export default function Home() {
       {/* Header / Nav */}
       <header className="w-full p-4 md:p-6 flex justify-between items-center z-10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold font-serif shadow-lg shadow-primary/20">
+          <div className="w-8 h-8 flex-shrink-0 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold font-serif shadow-md">
             E
           </div>
           <span className="font-serif font-bold text-lg tracking-tight hidden sm:block">
