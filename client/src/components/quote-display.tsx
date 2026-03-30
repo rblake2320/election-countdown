@@ -220,7 +220,9 @@ export function QuoteDisplay({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
-              <DropdownMenuLabel className="text-xs">Choose a Quote</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs">
+                Choose a Quote
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {QUOTES.map((quote) => (
                 <DropdownMenuItem

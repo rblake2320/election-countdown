@@ -62,16 +62,20 @@ export default function Home() {
             Election Countdown
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleTheme}
             className="rounded-full hover:bg-secondary w-10 h-10"
             aria-label="Toggle theme"
           >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {isDark ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
 
           {/* Auth Section */}
@@ -80,9 +84,15 @@ export default function Home() {
           ) : isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full"
+                >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                    <AvatarImage
+                      src={user.profileImageUrl || undefined}
+                      alt={user.firstName || "User"}
+                    />
                     <AvatarFallback>
                       {user.firstName?.[0] || user.email?.[0] || "U"}
                     </AvatarFallback>
@@ -156,18 +166,22 @@ export default function Home() {
             </Button>
           </div>
         )}
-        
+
         {/* Quote Display */}
         <QuoteDisplay
           isHidden={quoteHidden}
           onHide={() => setQuoteHidden(true)}
           onShow={() => setQuoteHidden(false)}
+          isAuthenticated={isAuthenticated}
         />
       </main>
 
       {/* Footer */}
       <footer className="w-full p-6 text-center text-xs text-muted-foreground z-10 border-t border-border/40 bg-background/50 backdrop-blur-sm">
-        <p>© {new Date().getFullYear()} Election Countdown. All calculations based on Eastern Time.</p>
+        <p>
+          © {new Date().getFullYear()} Election Countdown. All calculations
+          based on Eastern Time.
+        </p>
       </footer>
     </div>
   );
