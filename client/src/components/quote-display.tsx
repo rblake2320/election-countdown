@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RefreshCw, Settings2, Quote } from "lucide-react";
+import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,17 +18,59 @@ interface QuoteItem {
   author: string;
   source: string;
   year: string;
-  affiliation?: "left" | "right" | "neutral";
+  affiliation: "left" | "right" | "neutral";
 }
 
 const QUOTES: QuoteItem[] = [
+  // Democrat / left-leaning
   {
     id: "kennedy",
-    text: "Ask not what your country can do for you – ask what you can do for your country.",
+    text: "Ask not what your country can do for you \u2013 ask what you can do for your country.",
     author: "John F. Kennedy",
     source: "Inaugural Address",
     year: "1961",
     affiliation: "left",
+  },
+  {
+    id: "fdr",
+    text: "The only thing we have to fear is fear itself.",
+    author: "Franklin D. Roosevelt",
+    source: "First Inaugural Address",
+    year: "1933",
+    affiliation: "left",
+  },
+  {
+    id: "obama",
+    text: "Change will not come if we wait for some other person or some other time. We are the ones we\u2019ve been waiting for.",
+    author: "Barack Obama",
+    source: "Campaign Speech",
+    year: "2008",
+    affiliation: "left",
+  },
+  {
+    id: "lbj",
+    text: "We shall overcome because the arc of the moral universe is long, but it bends toward justice.",
+    author: "Lyndon B. Johnson",
+    source: "Address to Congress",
+    year: "1965",
+    affiliation: "left",
+  },
+  // Republican / right-leaning
+  {
+    id: "reagan",
+    text: "Freedom is never more than one generation away from extinction. We didn\u2019t pass it to our children in the bloodstream.",
+    author: "Ronald Reagan",
+    source: "Address to the Phoenix Chamber of Commerce",
+    year: "1961",
+    affiliation: "right",
+  },
+  {
+    id: "eisenhower",
+    text: "The future of this republic is in the hands of the American voter.",
+    author: "Dwight D. Eisenhower",
+    source: "Campaign Speech",
+    year: "1952",
+    affiliation: "right",
   },
   {
     id: "lincoln",
@@ -35,16 +78,17 @@ const QUOTES: QuoteItem[] = [
     author: "Abraham Lincoln",
     source: "Gettysburg Address",
     year: "1863",
-    affiliation: "neutral",
-  },
-  {
-    id: "reagan",
-    text: "Freedom is never more than one generation away from extinction. We didn't pass it to our children in the bloodstream. It must be fought for, protected, and handed on for them to do the same.",
-    author: "Ronald Reagan",
-    source: "Address to the Phoenix Chamber of Commerce",
-    year: "1961",
     affiliation: "right",
   },
+  {
+    id: "coolidge",
+    text: "The business of America is business. The chief ideal of the American people is idealism.",
+    author: "Calvin Coolidge",
+    source: "Address to the American Society of Newspaper Editors",
+    year: "1925",
+    affiliation: "right",
+  },
+  // Neutral / independent
   {
     id: "franklin",
     text: "Those who would give up essential Liberty, to purchase a little temporary Safety, deserve neither Liberty nor Safety.",
@@ -70,20 +114,12 @@ const QUOTES: QuoteItem[] = [
     affiliation: "neutral",
   },
   {
-    id: "fdr",
-    text: "The only thing we have to fear is fear itself.",
-    author: "Franklin D. Roosevelt",
-    source: "First Inaugural Address",
-    year: "1933",
-    affiliation: "left",
-  },
-  {
-    id: "eisenhower",
-    text: "The future of this republic is in the hands of the American voter.",
-    author: "Dwight D. Eisenhower",
-    source: "Campaign Speech",
-    year: "1952",
-    affiliation: "right",
+    id: "twain",
+    text: "Loyalty to the country always. Loyalty to the government when it deserves it.",
+    author: "Mark Twain",
+    source: "The Czar\u2019s Soliloquy",
+    year: "1905",
+    affiliation: "neutral",
   },
 ];
 
@@ -94,6 +130,16 @@ interface QuoteDisplayProps {
   preferredQuote?: string | null;
   onPreferenceChange?: (quoteId: string | null) => void;
   isAuthenticated?: boolean;
+  /** The user's vote intent: "red", "blue", "independent", "undecided", or null */
+  userParty?: string | null;
+}
+
+/** Map vote intent to quote affiliation for filtering */
+function getPartyAffiliation(intent: string | null | undefined): "left" | "right" | "neutral" | null {
+  if (!intent) return null;
+  if (intent === "blue") return "left";
+  if (intent === "red") return "right";
+  return "neutral"; // independent / undecided get neutral
 }
 
 export function QuoteDisplay({
@@ -103,8 +149,18 @@ export function QuoteDisplay({
   preferredQuote,
   onPreferenceChange,
   isAuthenticated,
+  userParty,
 }: QuoteDisplayProps) {
   const [currentQuote, setCurrentQuote] = useState<QuoteItem | null>(null);
+  const { track } = useTracking();
+
+  /** Filter quotes by party — party-aligned + neutral mix */
+  const relevantQuotes = useMemo(() => {
+    const affiliation = getPartyAffiliation(userParty);
+    if (!affiliation) return QUOTES; // no party = show all
+    // Show quotes from their party + neutral ones
+    return QUOTES.filter((q) => q.affiliation === affiliation || q.affiliation === "neutral");
+  }, [userParty]);
 
   useEffect(() => {
     if (preferredQuote === "none") {
@@ -112,21 +168,23 @@ export function QuoteDisplay({
     }
 
     if (preferredQuote && preferredQuote !== "random") {
-      const quote = QUOTES.find((q) => q.id === preferredQuote);
+      const quote = relevantQuotes.find((q) => q.id === preferredQuote);
       if (quote) {
         setCurrentQuote(quote);
         return;
       }
     }
 
-    const randomIndex = Math.floor(Math.random() * QUOTES.length);
-    setCurrentQuote(QUOTES[randomIndex]);
-  }, [preferredQuote]);
+    // Random from relevant pool
+    const randomIndex = Math.floor(Math.random() * relevantQuotes.length);
+    setCurrentQuote(relevantQuotes[randomIndex]);
+  }, [preferredQuote, relevantQuotes]);
 
   const shuffleQuote = () => {
-    const otherQuotes = QUOTES.filter((q) => q.id !== currentQuote?.id);
+    const otherQuotes = relevantQuotes.filter((q) => q.id !== currentQuote?.id);
     const randomIndex = Math.floor(Math.random() * otherQuotes.length);
     setCurrentQuote(otherQuotes[randomIndex]);
+    track("quote_shuffle", { toQuote: otherQuotes[randomIndex]?.id });
   };
 
   const hideQuotes = () => {
@@ -136,8 +194,8 @@ export function QuoteDisplay({
 
   const showQuotes = () => {
     if (!currentQuote) {
-      const randomIndex = Math.floor(Math.random() * QUOTES.length);
-      setCurrentQuote(QUOTES[randomIndex]);
+      const randomIndex = Math.floor(Math.random() * relevantQuotes.length);
+      setCurrentQuote(relevantQuotes[randomIndex]);
     }
     onShow();
     onPreferenceChange?.(null);
@@ -224,7 +282,7 @@ export function QuoteDisplay({
                 Choose a Quote
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {QUOTES.map((quote) => (
+              {relevantQuotes.map((quote) => (
                 <DropdownMenuItem
                   key={quote.id}
                   onClick={() => selectQuote(quote.id)}

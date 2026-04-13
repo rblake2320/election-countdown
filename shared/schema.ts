@@ -139,6 +139,120 @@ export const insertCountdownFlipSchema = createInsertSchema(countdownFlips).omit
   flippedAt: true,
 });
 
+// ─── User Events (granular click/view/interaction tracking for AI training) ───
+export const USER_EVENT_TYPES = [
+  "page_view",         // landed on a page
+  "flip",              // flipped between countdown cards
+  "view_duration",     // how long they stayed on a specific card
+  "theme_toggle",      // toggled dark/light mode
+  "register_click",    // clicked Register Now / Visit Vote.gov
+  "share_click",       // clicked a share button (header share icon)
+  "share_twitter",     // shared to Twitter/X
+  "share_facebook",    // shared to Facebook
+  "share_copy_link",   // copied share link
+  "share_native",      // used native share API
+  "share_timestamp",   // shared their join timestamp from profile
+  "sign_in_click",     // clicked sign in
+  "sign_up_complete",  // completed registration
+  "vote_intent_submit",// submitted or changed vote intent
+  "quote_shuffle",     // shuffled to a different quote
+  "quote_hide",        // hid quotes
+  "state_select",      // selected a state in voter registration
+  "external_link",     // clicked an external link (vote.gov, etc.)
+] as const;
+export type UserEventType = typeof USER_EVENT_TYPES[number];
+
+export const userEvents = pgTable("user_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),         // null for anonymous visitors
+  sessionId: varchar("session_id"),   // browser session fingerprint
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  eventData: text("event_data"),      // JSON string with event-specific metadata
+  page: varchar("page", { length: 100 }), // which page/view they were on
+  referrer: varchar("referrer", { length: 500 }), // where they came from
+  userAgent: varchar("user_agent", { length: 500 }),
+  ipHash: varchar("ip_hash", { length: 64 }), // hashed IP for bot detection, not raw IP
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("user_events_type_idx").on(table.eventType),
+  index("user_events_user_idx").on(table.userId),
+  index("user_events_session_idx").on(table.sessionId),
+  index("user_events_date_idx").on(table.createdAt),
+]);
+
+// ─── Share Tracking (dedicated table for share analytics) ───
+export const SHARE_PLATFORMS = [
+  "twitter", "facebook", "copy_link", "native", "email", "sms", "other"
+] as const;
+export type SharePlatform = typeof SHARE_PLATFORMS[number];
+
+export const shareEvents = pgTable("share_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),        // null for anonymous
+  ecId: varchar("ec_id"),            // the sharer's public EC-ID
+  platform: varchar("platform", { length: 20 }).notNull(), // twitter, facebook, copy_link, native
+  contentType: varchar("content_type", { length: 50 }).notNull(), // "countdown", "vote_intent", "timestamp", "general"
+  sharedUrl: varchar("shared_url", { length: 500 }),
+  referralCode: varchar("referral_code", { length: 20 }), // unique per share for tracking downstream clicks
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("share_events_user_idx").on(table.userId),
+  index("share_events_platform_idx").on(table.platform),
+  index("share_events_date_idx").on(table.createdAt),
+  index("share_events_referral_idx").on(table.referralCode),
+]);
+
+// ─── Referral Tracking (when someone arrives via a shared link) ───
+export const referralVisits = pgTable("referral_visits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referralCode: varchar("referral_code", { length: 20 }).notNull(), // matches shareEvents.referralCode
+  referrerEcId: varchar("referrer_ec_id"), // who shared the link
+  visitorSessionId: varchar("visitor_session_id"),
+  visitorUserId: varchar("visitor_user_id"), // if they sign up
+  convertedToSignup: boolean("converted_to_signup").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("referral_visits_code_idx").on(table.referralCode),
+  index("referral_visits_date_idx").on(table.createdAt),
+]);
+
+// ─── Verification Codes (email + phone) ───
+export const verificationCodes = pgTable("verification_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  codeType: varchar("code_type", { length: 10 }).notNull(), // "email" or "phone"
+  code: varchar("code", { length: 6 }).notNull(), // 6-digit code
+  target: varchar("target", { length: 100 }).notNull(), // email address or phone number
+  used: boolean("used").default(false).notNull(),
+  attempts: integer("attempts").default(0).notNull(), // track failed attempts
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("verification_codes_user_idx").on(table.userId),
+  index("verification_codes_type_idx").on(table.codeType),
+]);
+
+// ─── Schemas ───
+export const insertUserEventSchema = createInsertSchema(userEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertShareEventSchema = createInsertSchema(shareEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralVisitSchema = createInsertSchema(referralVisits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVerificationCodeSchema = createInsertSchema(verificationCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertVoteIntent = z.infer<typeof insertVoteIntentSchema>;
 export type VoteIntentRecord = typeof voteIntents.$inferSelect;
@@ -157,3 +271,15 @@ export type UserSession = typeof userSessions.$inferSelect;
 
 export type InsertCountdownFlip = z.infer<typeof insertCountdownFlipSchema>;
 export type CountdownFlip = typeof countdownFlips.$inferSelect;
+
+export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
+export type UserEvent = typeof userEvents.$inferSelect;
+
+export type InsertShareEvent = z.infer<typeof insertShareEventSchema>;
+export type ShareEvent = typeof shareEvents.$inferSelect;
+
+export type InsertReferralVisit = z.infer<typeof insertReferralVisitSchema>;
+export type ReferralVisit = typeof referralVisits.$inferSelect;
+
+export type InsertVerificationCode = z.infer<typeof insertVerificationCodeSchema>;
+export type VerificationCode = typeof verificationCodes.$inferSelect;

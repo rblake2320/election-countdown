@@ -2,6 +2,7 @@ import type { Express } from "express";
 import passport from "passport";
 import { authStorage } from "./storage";
 import { isAuthenticated, hashPassword } from "./localAuth";
+import { generateEcId } from "../ecId";
 
 export function registerAuthRoutes(app: Express): void {
   // Get current authenticated user
@@ -41,7 +42,11 @@ export function registerAuthRoutes(app: Express): void {
 
       const { hash, salt } = hashPassword(password);
 
+      // Generate permanent EC-ID
+      const ecId = generateEcId();
+
       const user = await authStorage.upsertUser({
+        ecId,
         email,
         firstName: firstName || null,
         lastName: lastName || null,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
   const [error, setError] = useState<string | null>(null);
 
   const { login, register, isLoggingIn, isRegistering } = useAuth();
+  const { track } = useTracking();
 
   const isPending = isLoggingIn || isRegistering;
 
@@ -38,8 +40,10 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
     try {
       if (mode === "login") {
         await login({ email, password });
+        track("sign_in_click");
       } else {
         await register({ email, password, firstName, lastName });
+        track("sign_up_complete");
       }
       setOpen(false);
       setEmail("");

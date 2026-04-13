@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, CheckCircle2, MapPin } from "lucide-react";
+import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -41,6 +42,7 @@ const US_STATES = [
 
 export function VoterRegistrationCTA() {
   const [selectedState, setSelectedState] = useState<string>("");
+  const { track } = useTracking();
 
   const getStateRegistrationUrl = (stateCode: string) => {
     return `https://vote.gov/register/${stateCode.toLowerCase()}/`;
@@ -72,7 +74,7 @@ export function VoterRegistrationCTA() {
           <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <Select value={selectedState} onValueChange={setSelectedState}>
+              <Select value={selectedState} onValueChange={(val) => { setSelectedState(val); track("state_select", { state: val }); }}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Select your state" />
                 </SelectTrigger>
@@ -96,6 +98,7 @@ export function VoterRegistrationCTA() {
                   href={getStateRegistrationUrl(selectedState)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track("register_click", { state: selectedState })}
                 >
                   Register Now
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -112,6 +115,7 @@ export function VoterRegistrationCTA() {
                   href="https://vote.gov"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track("external_link", { url: "https://vote.gov" })}
                 >
                   Visit Vote.gov
                   <ExternalLink className="h-3.5 w-3.5" />

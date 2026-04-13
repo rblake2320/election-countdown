@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { insertVoteIntentSchema, insertUserPreferencesSchema, insertDonationSchema } from "@shared/schema";
+import trackingRoutes from "./trackingRoutes";
+import verificationRoutes from "./verificationRoutes";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { voteIntentLimiter, donationLimiter } from "./middleware/rateLimit";
 import { requireTurnstile, isTurnstileConfigured } from "./middleware/turnstile";
@@ -83,6 +85,10 @@ export async function registerRoutes(
 
   // Apply non-blocking session tracking to all routes (only fires when user is authenticated)
   app.use(sessionTrackingMiddleware);
+
+  // Mount tracking and verification routes
+  app.use("/api/track", trackingRoutes);
+  app.use("/api/verify", verificationRoutes);
 
   // Get Stripe publishable key (for frontend)
   app.get("/api/stripe/config", async (req, res) => {
