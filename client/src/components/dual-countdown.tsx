@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CountdownTimer } from "./countdown-timer";
-import { MiniCountdown } from "./mini-countdown";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,15 +16,6 @@ const ELECTIONS = [
     year: "2026",
   },
   {
-    id: "primary-2026",
-    title: "2026 Primary Season",
-    subtitle: "State Primaries Begin",
-    date: "2026-06-09",
-    time: "00:00",
-    timezone: "America/New_York",
-    year: "2026",
-  },
-  {
     id: "presidential-2028",
     title: "2028 Presidential Election",
     subtitle: "Next Presidential Race",
@@ -33,21 +23,24 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2028",
-    // Inauguration shown as secondary countdown on this card
-    inauguration: {
-      date: "2029-01-20",
-      time: "12:00",
-      label: "Inauguration Day",
-    },
+  },
+  {
+    id: "inauguration-2029",
+    title: "2029 Inauguration Day",
+    subtitle: "Presidential Inauguration",
+    date: "2029-01-20",
+    time: "12:00",
+    timezone: "America/New_York",
+    year: "2029",
   },
 ];
 
-async function trackFlip(fromYear: string, toYear: string) {
+async function trackFlip(fromId: string, toId: string) {
   try {
     await fetch("/api/track/flip", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fromYear, toYear }),
+      body: JSON.stringify({ fromYear: fromId, toYear: toId }),
     });
   } catch {
     // Silently ignore tracking errors
@@ -62,10 +55,10 @@ export function DualCountdown() {
 
   const flipTo = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return;
-    const fromYear = ELECTIONS[activeIndex].year;
-    const toYear = ELECTIONS[newIndex].year;
+    const fromId = ELECTIONS[activeIndex].id;
+    const toId = ELECTIONS[newIndex].id;
     setActiveIndex(newIndex);
-    trackFlip(fromYear, toYear);
+    trackFlip(fromId, toId);
   }, [activeIndex]);
 
   const flipUp = useCallback(() => {
@@ -169,9 +162,6 @@ export function DualCountdown() {
   // Convert to target date
   const targetDateISO = `${activeElection.date}T${activeElection.time}:00`;
 
-  // Check if this election has an inauguration sub-countdown
-  const inauguration = "inauguration" in activeElection ? activeElection.inauguration : null;
-
   return (
     <div 
       ref={containerRef}
@@ -205,16 +195,6 @@ export function DualCountdown() {
             title={activeElection.title}
             subtitle={activeElection.subtitle}
           />
-
-          {/* Inauguration sub-countdown for presidential elections */}
-          {inauguration && (
-            <div className="mt-6 sm:mt-8">
-              <MiniCountdown
-                targetDate={`${inauguration.date}T${inauguration.time}:00`}
-                label={inauguration.label}
-              />
-            </div>
-          )}
         </motion.div>
       </AnimatePresence>
       {/* Down arrow */}
@@ -248,7 +228,9 @@ export function DualCountdown() {
         ))}
       </div>
       {/* Helper text */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">Use ↑↓ keys to flip between elections</div>
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">
+        Use ↑↓ keys to flip between events
+      </div>
     </div>
   );
 }
