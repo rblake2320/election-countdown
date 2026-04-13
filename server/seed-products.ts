@@ -1,7 +1,13 @@
-import { getUncachableStripeClient } from './stripeClient';
+import Stripe from 'stripe';
 
 async function seedDonationProducts() {
-  const stripe = await getUncachableStripeClient();
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    console.error('STRIPE_SECRET_KEY environment variable is required');
+    process.exit(1);
+  }
+
+  const stripe = new Stripe(secretKey);
 
   console.log('Creating donation product...');
 

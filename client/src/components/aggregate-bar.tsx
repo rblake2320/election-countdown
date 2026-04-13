@@ -28,9 +28,13 @@ export function AggregateBar() {
   const { data: stats, isLoading } = useQuery<StatsData>({
     queryKey: ["/api/stats"],
     queryFn: async () => {
-      const res = await fetch("/api/stats");
-      if (!res.ok) throw new Error("Failed to fetch stats");
-      return res.json();
+      try {
+        const res = await fetch("/api/stats");
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });

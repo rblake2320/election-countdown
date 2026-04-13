@@ -168,19 +168,39 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(donations).where(eq(donations.userId, userId));
   }
 
-  // Stripe data queries
+  // Donation price tiers (hardcoded since we no longer use stripe-replit-sync schema)
   async getDonationPrices() {
-    const result = await db.execute(
-      sql`
-        SELECT pr.id, pr.unit_amount, pr.currency, pr.metadata
-        FROM stripe.prices pr
-        JOIN stripe.products p ON pr.product = p.id
-        WHERE p.name = 'Election Countdown Donation'
-          AND pr.active = true
-        ORDER BY pr.unit_amount ASC
-      `
-    );
-    return result.rows;
+    // These are fetched directly from Stripe API at runtime
+    try {
+      const { getUncachableStripeClient } = await import('./stripeClient');
+      const stripe = await getUncachableStripeClient();
+      
+      // Search for our donation product
+      const products = await stripe.products.search({
+        query: "name:'Election Countdown Donation'"
+      });
+      
+      if (products.data.length === 0) {
+        return [];
+      }
+      
+      const prices = await stripe.prices.list({
+        product: products.data[0].id,
+        active: true,
+      });
+      
+      return prices.data
+        .map(p => ({
+          id: p.id,
+          unit_amount: p.unit_amount,
+          currency: p.currency,
+          metadata: p.metadata,
+        }))
+        .sort((a, b) => (a.unit_amount || 0) - (b.unit_amount || 0));
+    } catch (error) {
+      console.error('Error fetching Stripe prices:', error);
+      return [];
+    }
   }
 
   async findDonationByStripeSessionId(sessionId: string): Promise<Donation | undefined> {

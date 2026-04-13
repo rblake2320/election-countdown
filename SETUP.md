@@ -1,29 +1,45 @@
-# Election Countdown MVP - Setup Guide
+# Election Countdown — Setup Guide
 
 ## Prerequisites
 
-1. **PostgreSQL Database** - Already configured via Replit
-2. **Stripe Account** - Connected via Replit integration
-3. **Replit Auth** - Already configured
+1. **Node.js 20+**
+2. **PostgreSQL** database
+3. **Stripe Account** (for donations)
 
 ## Initial Setup
 
-### 1. Install Dependencies
+### 1. Clone and Install
+
 ```bash
+git clone https://github.com/rblake2320/election-countdown.git
+cd election-countdown
 npm install
 ```
 
-### 2. Sync Database Schema
+### 2. Configure Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your values:
+
+- `DATABASE_URL` — PostgreSQL connection string
+- `SESSION_SECRET` — Random secret for session encryption
+- `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` — From [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
+- `STRIPE_WEBHOOK_SECRET` — From Stripe webhook settings
+- `ADMIN_SECRET` — Secret for admin analytics endpoints
+
+### 3. Push Database Schema
+
 ```bash
 npm run db:push
 ```
 
-### 3. Seed Stripe Products (IMPORTANT - Run Once)
-
-This creates the donation price tiers in Stripe:
+### 4. Seed Stripe Products (first time only)
 
 ```bash
-npx tsx server/seed-products.ts
+npm run seed:stripe
 ```
 
 **Expected Output:**
@@ -38,102 +54,63 @@ Created price: price_xxxxx - $100 Donation
 Donation products seeded successfully!
 ```
 
-**Note:** If you see "Donation product already exists", the products are already created and you can skip this step.
+### 5. Optional: Configure Cloudflare Turnstile
 
-### 4. Optional: Configure Cloudflare Turnstile
+For bot protection, add your Turnstile secret key to `.env`:
+```
+TURNSTILE_SECRET_KEY=your-turnstile-secret
+```
 
-For bot protection, add Turnstile keys:
-
-1. Go to https://dash.cloudflare.com/
-2. Navigate to Turnstile
-3. Create a new site widget
-4. Add your Turnstile secret key to secrets:
-   - In Replit Secrets tab, add: `TURNSTILE_SECRET_KEY`
-
-If not configured, bot protection will be skipped in development.
+If not configured, bot protection will be skipped.
 
 ## Running the Application
 
 ### Development
+
 ```bash
 npm run dev
 ```
 
-The app will be available at http://localhost:5000
+App available at http://localhost:5000
 
 ### Production
 
-Before publishing:
+```bash
+npm run build
+npm start
+```
 
-1. **Run the seed script in production** (first time only):
-   - SSH into your deployment or run via Replit Shell
-   - Execute: `npx tsx server/seed-products.ts`
+## Authentication
 
-2. **Publish via Replit**:
-   - Click "Publish" in Replit
-   - The app will be live with working donation flow
+This app uses email/password authentication (passport-local). Users register and sign in through the in-app dialog. Sessions are stored in PostgreSQL.
 
 ## Features
 
-✅ **Dual Countdown** - Navigate with:
-- Arrow keys (↑↓)
-- Mouse wheel (hover over countdown)
-- Touch swipe (mobile)
-- Button clicks
+- **Dual Countdown** — Navigate with arrow keys, mouse wheel, touch swipe, or button clicks between 2026 Midterm and 2028 Presidential elections
+- **Vote Intent** — Submit voting intention with state (required), age range, city, sex (optional). Rate limited to 5/hour/IP
+- **Donations** — Stripe Checkout with preset tiers ($5–$100). Donors get analytics access and custom candidate field
+- **Aggregate Stats** — Hidden until 50K participants for privacy
+- **Admin Analytics** — Protected by admin secret header
 
-✅ **Vote Intent** - Submit with:
-- Required: State, Intent (red/blue/undecided)
-- Optional: Age range, City, Sex
-- Rate limited: 5 submissions per hour per IP
-- Bot protection: Cloudflare Turnstile (when configured)
+## Architecture
 
-✅ **Donations** - Stripe Checkout with:
-- Preset donation tiers ($5, $10, $25, $50, $100)
-- Analytics opt-in checkbox
-- Rate limited: 10 attempts per hour per IP
-- Automatic persistence via webhooks
-
-✅ **Aggregate Stats** - Hidden until 50K participants
-
-## Troubleshooting
-
-### Donations not working
-
-**Problem:** `/api/donation-prices` returns empty array
-
-**Solution:** Run the seed script:
-```bash
-npx tsx server/seed-products.ts
-```
-
-### Stripe webhook not recording donations
-
-**Problem:** Donations go through but aren't saved
-
-**Solution:** Check logs for webhook errors. The webhook queries the `stripe.checkout_sessions` table populated by stripe-replit-sync.
-
-### Rate limiting too aggressive
-
-**Problem:** Users locked out too quickly
-
-**Solution:** Adjust limits in `server/middleware/rateLimit.ts`:
-```typescript
-max: 5, // Change to higher number
-windowMs: 60 * 60 * 1000, // Change time window
-```
-
-## Architecture Notes
-
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Framer Motion
+- **Backend:** Node.js, Express 5, TypeScript (ESM)
 - **Database:** PostgreSQL with Drizzle ORM
-- **Auth:** Replit Auth (Google, GitHub, Apple, Email)
-- **Payments:** Stripe + stripe-replit-sync
+- **Auth:** passport-local (email/password), sessions in PostgreSQL
+- **Payments:** Stripe Checkout + webhooks
 - **Bot Protection:** Cloudflare Turnstile (optional)
 - **Rate Limiting:** express-rate-limit
 
 ## Environment Variables
 
-Managed by Replit integrations:
-- `DATABASE_URL` - PostgreSQL connection
-- `TURNSTILE_SECRET_KEY` - Optional, for bot protection
-
-All Stripe credentials are managed automatically by the Replit Stripe connector.
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `SESSION_SECRET` | Yes | Session encryption secret |
+| `STRIPE_SECRET_KEY` | Yes | Stripe secret API key |
+| `STRIPE_PUBLISHABLE_KEY` | Yes | Stripe publishable API key |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Stripe webhook signing secret |
+| `ADMIN_SECRET` | No | Admin analytics access secret |
+| `TURNSTILE_SECRET_KEY` | No | Cloudflare Turnstile bot protection |
+| `PORT` | No | Server port (default: 5000) |

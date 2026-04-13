@@ -23,44 +23,6 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Initialize Stripe if available
-async function initStripe() {
-  try {
-    const { runMigrations } = await import('stripe-replit-sync');
-    const { getStripeSync } = await import("./stripeClient");
-    
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL required');
-    }
-
-    log('Initializing Stripe...', 'stripe');
-    await runMigrations({ databaseUrl, schema: 'stripe' });
-    
-    const stripeSync = await getStripeSync();
-    
-    // Set up webhook
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
-    const webhookUrl = `${webhookBaseUrl}/api/stripe/webhook`;
-    
-    try {
-      const result = await stripeSync.findOrCreateManagedWebhook(webhookUrl);
-      log(`Webhook configured: ${webhookUrl}`, 'stripe');
-    } catch (webhookError) {
-      log(`Warning: Could not configure webhook: ${webhookError}`, 'stripe');
-    }
-
-    // Backfill in background
-    stripeSync.syncBackfill()
-      .then(() => log('Stripe data synced', 'stripe'))
-      .catch((err: any) => console.error('Stripe sync error:', err));
-      
-    log('Stripe initialized', 'stripe');
-  } catch (error: any) {
-    log(`Stripe not available: ${error.message}`, 'stripe');
-  }
-}
-
 // Stripe webhook route BEFORE express.json()
 app.post(
   '/api/stripe/webhook',
@@ -126,9 +88,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize Stripe (non-blocking)
-  await initStripe();
-
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

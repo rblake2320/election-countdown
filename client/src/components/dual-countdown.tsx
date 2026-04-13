@@ -14,6 +14,17 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2026",
+    type: "midterm" as const,
+  },
+  {
+    id: "primary-2026",
+    title: "2026 Primary Season",
+    subtitle: "State Primaries Begin",
+    date: "2026-06-09",
+    time: "00:00",
+    timezone: "America/New_York",
+    year: "2026",
+    type: "primary" as const,
   },
   {
     id: "presidential-2028",
@@ -23,6 +34,17 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2028",
+    type: "presidential" as const,
+  },
+  {
+    id: "inauguration-2029",
+    title: "2029 Inauguration Day",
+    subtitle: "Presidential Inauguration",
+    date: "2029-01-20",
+    time: "12:00",
+    timezone: "America/New_York",
+    year: "2029",
+    type: "inauguration" as const,
   },
 ];
 
@@ -219,7 +241,7 @@ export function DualCountdown() {
         ))}
       </div>
       {/* Helper text */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">Use ↑↓ keys, Flip between Mid Term and Presidential </div>
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-[-90px] text-xs text-muted-foreground text-center whitespace-nowrap">Use ↑↓ keys to flip between elections</div>
     </div>
   );
 }

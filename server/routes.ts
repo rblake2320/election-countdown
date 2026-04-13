@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { insertVoteIntentSchema, insertUserPreferencesSchema, insertDonationSchema } from "@shared/schema";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { voteIntentLimiter, donationLimiter } from "./middleware/rateLimit";
@@ -63,8 +63,8 @@ function setCachedDonorAnalytics(userId: string, data: DonorAnalyticsCachePayloa
 // Non-blocking session tracking middleware - tracks session only if user is already authenticated
 // Does NOT enforce authentication (no 401 responses)
 function sessionTrackingMiddleware(req: any, res: any, next: any) {
-  if (req.user?.claims?.sub) {
-    const userId = req.user.claims.sub;
+  if (req.user?.id) {
+    const userId = req.user.id;
     // Fire and forget - don't await to avoid slowing down requests
     storage.upsertUserSession(userId).catch((err) =>
       console.error("Session tracking error:", err)
@@ -139,7 +139,7 @@ export async function registerRoutes(
   // Get current user's vote intent
   app.get("/api/intent", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const intent = await storage.getVoteIntent(userId);
       return res.json(intent || null);
     } catch (error) {
@@ -151,7 +151,7 @@ export async function registerRoutes(
   // Submit or update vote intent (with rate limiting and bot protection)
   app.post("/api/intent", voteIntentLimiter, isAuthenticated, requireTurnstile, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Get existing intent to track changes
       const existingIntent = await storage.getVoteIntent(userId);
@@ -193,7 +193,7 @@ export async function registerRoutes(
   // Get user preferences
   app.get("/api/preferences", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const prefs = await storage.getUserPreferences(userId);
       return res.json(prefs || { userId, preferredQuote: null, theme: "system" });
     } catch (error) {
@@ -205,7 +205,7 @@ export async function registerRoutes(
   // Update user preferences
   app.post("/api/preferences", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const parsed = insertUserPreferencesSchema.safeParse({
         ...req.body,
@@ -241,8 +241,8 @@ export async function registerRoutes(
   // Create donation checkout session (with rate limiting and bot protection)
   app.post("/api/donate", donationLimiter, isAuthenticated, requireTurnstile, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const email = req.user.claims.email;
+      const userId = req.user.id;
+      const email = req.user.email;
       const { priceId, analyticsOptIn } = req.body;
 
       if (!priceId) {
@@ -280,7 +280,7 @@ export async function registerRoutes(
   // Get user's donations
   app.get("/api/donations", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const donations = await storage.getDonationsByUser(userId);
       return res.json({ donations });
     } catch (error) {
@@ -296,7 +296,7 @@ export async function registerRoutes(
       if (!fromYear || !toYear) {
         return res.status(400).json({ message: "fromYear and toYear are required" });
       }
-      const userId = req.user?.claims?.sub || null;
+      const userId = req.user?.id || null;
       await storage.recordCountdownFlip(userId, String(fromYear), String(toYear));
       return res.json({ ok: true });
     } catch (error) {
@@ -480,7 +480,7 @@ export async function registerRoutes(
   // Donor analytics endpoint - requires $1+ donation to access — cached 30s per user
   app.get("/api/donor/analytics", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
 
       // Check cache first
       const cached = getCachedDonorAnalytics(userId);

@@ -11,7 +11,7 @@ interface CountdownTimerProps {
 const NumberBox = ({ value, label }: { value: number; label: string }) => {
   return (
     <div className="flex flex-col items-center">
-      <div className="relative bg-card text-card-foreground border shadow-lg rounded-xl p-3 sm:p-5 md:p-6 min-w-[70px] sm:min-w-[100px] md:min-w-[140px] text-center backdrop-blur-sm">
+      <div className="relative bg-card text-card-foreground border shadow-lg rounded-xl p-2.5 sm:p-4 md:p-6 min-w-[60px] sm:min-w-[90px] md:min-w-[140px] text-center backdrop-blur-sm">
         <AnimatePresence mode="popLayout">
           <motion.span
             key={value}
@@ -19,14 +19,14 @@ const NumberBox = ({ value, label }: { value: number; label: string }) => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -20, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="block text-3xl sm:text-5xl md:text-7xl font-mono font-bold tracking-tighter leading-none"
+            className="block text-2xl sm:text-4xl md:text-7xl font-mono font-bold tracking-tighter leading-none"
           >
             {value.toString().padStart(2, "0")}
           </motion.span>
         </AnimatePresence>
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-xl" />
       </div>
-      <span className="mt-3 text-[10px] sm:text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase">
+      <span className="mt-2 sm:mt-3 text-[9px] sm:text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase">
         {label}
       </span>
     </div>
@@ -70,7 +70,7 @@ export function CountdownTimer({ targetDate, title, subtitle }: CountdownTimerPr
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 justify-center items-center">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-3 md:gap-6 justify-center items-center">
         <NumberBox value={days} label="Days" />
         <NumberBox value={hours} label="Hours" />
         <NumberBox value={minutes} label="Minutes" />
