@@ -70,12 +70,25 @@ export function QuoteDisplay({
     setCurrentQuote(relevantQuotes[randomIndex]);
   }, [preferredQuote, relevantQuotes]);
 
-  const shuffleQuote = () => {
+  const shuffleQuote = (silent = false) => {
     const otherQuotes = relevantQuotes.filter((q) => q.id !== currentQuote?.id);
     const randomIndex = Math.floor(Math.random() * otherQuotes.length);
     setCurrentQuote(otherQuotes[randomIndex]);
-    track("quote_shuffle", { toQuote: otherQuotes[randomIndex]?.id });
+    if (!silent) {
+      track("quote_shuffle", { toQuote: otherQuotes[randomIndex]?.id });
+    }
   };
+
+  // Rotate quote when user returns to the page (screen on, tab refocus)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden && !isHidden && preferredQuote !== "none") {
+        shuffleQuote(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  });
 
   const hideQuotes = () => {
     onHide();
@@ -140,7 +153,7 @@ export function QuoteDisplay({
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full"
-            onClick={shuffleQuote}
+            onClick={() => shuffleQuote()}
             aria-label="Show different quote"
             data-testid="button-shuffle-quote"
           >
