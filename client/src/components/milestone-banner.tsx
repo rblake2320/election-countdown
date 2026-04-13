@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Flame, AlertTriangle, Clock } from "lucide-react";
-import { differenceInDays } from "date-fns";
 
 interface MilestoneBannerProps {
   targetDate: string;
@@ -32,9 +31,28 @@ const MILESTONES: Milestone[] = [
 
 export function MilestoneBanner({ targetDate, electionTitle }: MilestoneBannerProps) {
   const milestone = useMemo(() => {
-    const target = new Date(targetDate);
     const now = new Date();
-    const daysLeft = differenceInDays(target, now);
+    // Parse target as Eastern Time (same logic as countdown hook)
+    let target: Date;
+    try {
+      const asUtc = new Date(targetDate + "Z");
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        timeZoneName: "shortOffset",
+      });
+      const parts = formatter.formatToParts(asUtc);
+      const tzPart = parts.find((p) => p.type === "timeZoneName");
+      const offsetMatch = tzPart?.value?.match(/GMT([+-]\d+)/);
+      if (offsetMatch) {
+        const offsetHours = parseInt(offsetMatch[1], 10);
+        target = new Date(asUtc.getTime() - offsetHours * 3600 * 1000);
+      } else {
+        target = new Date(targetDate);
+      }
+    } catch {
+      target = new Date(targetDate);
+    }
+    const daysLeft = Math.floor((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     // Find the closest milestone that we're at or past
     for (let i = MILESTONES.length - 1; i >= 0; i--) {
