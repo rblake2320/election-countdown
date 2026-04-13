@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CountdownTimer } from "./countdown-timer";
+import { MiniCountdown } from "./mini-countdown";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +15,6 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2026",
-    type: "midterm" as const,
   },
   {
     id: "primary-2026",
@@ -24,7 +24,6 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2026",
-    type: "primary" as const,
   },
   {
     id: "presidential-2028",
@@ -34,17 +33,12 @@ const ELECTIONS = [
     time: "00:00",
     timezone: "America/New_York",
     year: "2028",
-    type: "presidential" as const,
-  },
-  {
-    id: "inauguration-2029",
-    title: "2029 Inauguration Day",
-    subtitle: "Presidential Inauguration",
-    date: "2029-01-20",
-    time: "12:00",
-    timezone: "America/New_York",
-    year: "2029",
-    type: "inauguration" as const,
+    // Inauguration shown as secondary countdown on this card
+    inauguration: {
+      date: "2029-01-20",
+      time: "12:00",
+      label: "Inauguration Day",
+    },
   },
 ];
 
@@ -175,6 +169,9 @@ export function DualCountdown() {
   // Convert to target date
   const targetDateISO = `${activeElection.date}T${activeElection.time}:00`;
 
+  // Check if this election has an inauguration sub-countdown
+  const inauguration = "inauguration" in activeElection ? activeElection.inauguration : null;
+
   return (
     <div 
       ref={containerRef}
@@ -208,6 +205,16 @@ export function DualCountdown() {
             title={activeElection.title}
             subtitle={activeElection.subtitle}
           />
+
+          {/* Inauguration sub-countdown for presidential elections */}
+          {inauguration && (
+            <div className="mt-6 sm:mt-8">
+              <MiniCountdown
+                targetDate={`${inauguration.date}T${inauguration.time}:00`}
+                label={inauguration.label}
+              />
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
       {/* Down arrow */}
