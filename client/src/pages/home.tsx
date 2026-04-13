@@ -35,9 +35,22 @@ export default function Home() {
   const { data: verifyStatus } = useQuery({
     queryKey: ["/api/verify/status"],
     queryFn: async () => {
-      const res = await fetch("/api/verify/status", { credentials: "include" });
-      if (!res.ok) return null;
-      return res.json();
+      try {
+        const res = await fetch("/api/verify/status", {
+          credentials: "include",
+          signal: AbortSignal.timeout(2000),
+        });
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        // No backend — return local user's verification status
+        return {
+          emailVerified: false,
+          phoneVerified: false,
+          isFullyVerified: false,
+          ecId: user?.ecId || null,
+        };
+      }
     },
     enabled: isAuthenticated,
   });
@@ -46,10 +59,23 @@ export default function Home() {
   const { data: existingIntent } = useQuery({
     queryKey: ["/api/intent"],
     queryFn: async () => {
-      const res = await fetch("/api/intent", { credentials: "include" });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch intent");
-      return res.json();
+      try {
+        const res = await fetch("/api/intent", {
+          credentials: "include",
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error("Failed to fetch intent");
+        return res.json();
+      } catch {
+        // No backend — check localStorage
+        try {
+          const local = localStorage.getItem("ec_vote_intent");
+          return local ? JSON.parse(local) : null;
+        } catch {
+          return null;
+        }
+      }
     },
     enabled: isAuthenticated,
   });

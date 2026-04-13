@@ -9,7 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { ShieldCheck, Mail, Phone, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -343,16 +342,27 @@ export function VerificationDialog({ trigger }: { trigger?: React.ReactNode }) {
     }
   };
 
+  const handleOpen = () => {
+    setOpen(true);
+    setStep("choose");
+    setError(null);
+    setDevCode(null);
+    setCode("");
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) { setStep("choose"); setError(null); setDevCode(null); setCode(""); } }}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            Verify Identity
-          </Button>
-        )}
-      </DialogTrigger>
+    <>
+      {trigger ? (
+        <span onClick={handleOpen} style={{ cursor: "pointer" }}>
+          {trigger}
+        </span>
+      ) : (
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleOpen}>
+          <ShieldCheck className="h-4 w-4" />
+          Verify Identity
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">
@@ -364,6 +374,7 @@ export function VerificationDialog({ trigger }: { trigger?: React.ReactNode }) {
         </DialogHeader>
         {renderStep()}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }

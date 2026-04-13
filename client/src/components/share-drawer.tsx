@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Share2, Copy, Check, Twitter, Facebook, Mail, MessageCircle } from "lucide-react";
 import { useTracking } from "@/hooks/use-tracking";
@@ -28,6 +27,11 @@ export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
 
   const shareUrl = window.location.href.split("?")[0];
   const shareText = "Track every second until the next election. Make your vote count!";
+
+  const handleOpen = () => {
+    setOpen(true);
+    track("share_click");
+  };
 
   const handleShare = async (platform: string) => {
     const referralCode = await trackShareAction(platform, "general", shareUrl);
@@ -73,20 +77,23 @@ export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-secondary w-9 h-9 sm:w-10 sm:h-10"
-            aria-label="Share"
-            onClick={() => track("share_click")}
-          >
-            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-        )}
-      </DialogTrigger>
+    <>
+      {trigger ? (
+        <span onClick={handleOpen} style={{ cursor: "pointer" }}>
+          {trigger}
+        </span>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-secondary w-9 h-9 sm:w-10 sm:h-10"
+          aria-label="Share"
+          onClick={handleOpen}
+        >
+          <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">Share Election Countdown</DialogTitle>
@@ -153,6 +160,7 @@ export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
           </Button>
         )}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }

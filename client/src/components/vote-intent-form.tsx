@@ -27,7 +27,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Vote, Loader2, Share2, Twitter, Link2, Check } from "lucide-react";
@@ -159,16 +158,25 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await fetch("/api/intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save voting intent");
+      try {
+        const response = await fetch("/api/intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(data),
+          signal: AbortSignal.timeout(3000),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to save voting intent");
+        }
+        return response.json();
+      } catch {
+        // No backend — save locally
+        try {
+          localStorage.setItem("ec_vote_intent", JSON.stringify(data));
+        } catch {}
+        return data;
       }
-      return response.json();
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/intent"] });
@@ -204,16 +212,16 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 border-primary/20 hover:border-primary/40"
-        >
-          <Vote className="h-4 w-4" />
-          {existingIntent ? "Update Intent" : "Share Your Vote Plan"}
-        </Button>
-      </DialogTrigger>
+    <>
+      <Button
+        variant="outline"
+        className="gap-2 border-primary/20 hover:border-primary/40"
+        onClick={() => setOpen(true)}
+      >
+        <Vote className="h-4 w-4" />
+        {existingIntent ? "Update Intent" : "Share Your Vote Plan"}
+      </Button>
+      <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">Your Voting Plan</DialogTitle>
@@ -428,6 +436,7 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
           </form>
         </Form>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }

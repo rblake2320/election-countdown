@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { LogIn, Loader2 } from "lucide-react";
 
@@ -33,6 +32,11 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
 
   const isPending = isLoggingIn || isRegistering;
 
+  // Manual open handler — fixes Bug #1 (first-click dead in iframes)
+  const handleOpen = useCallback(() => {
+    setOpen(true);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -50,108 +54,145 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
       setPassword("");
       setFirstName("");
       setLastName("");
+      setError(null);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     }
   };
 
-  const switchMode = () => {
-    setMode(mode === "login" ? "register" : "login");
+  // Explicit mode switch — fixes Bug #4 (Create one link not toggling)
+  const switchMode = useCallback(() => {
+    setMode((prev) => (prev === "login" ? "register" : "login"));
     setError(null);
-  };
+    setEmail("");
+    setPassword("");
+    setFirstName("");
+    setLastName("");
+  }, []);
+
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      // Reset form when closing
+      setError(null);
+      setEmail("");
+      setPassword("");
+      setFirstName("");
+      setLastName("");
+      setMode(defaultMode);
+    }
+  }, [defaultMode]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="default" size="sm" className="gap-2">
-            <LogIn className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign In</span>
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-serif text-2xl">
-            {mode === "login" ? "Sign In" : "Create Account"}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === "login"
-              ? "Sign in to share your voting intention"
-              : "Create an account to participate"}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {/* Trigger — uses direct onClick instead of DialogTrigger for iframe compatibility */}
+      {trigger ? (
+        <span onClick={handleOpen} style={{ cursor: "pointer" }}>
+          {trigger}
+        </span>
+      ) : (
+        <Button
+          variant="default"
+          size="sm"
+          className="gap-2"
+          onClick={handleOpen}
+        >
+          <LogIn className="h-4 w-4" />
+          <span className="hidden sm:inline">Sign In</span>
+        </Button>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {mode === "register" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John"
-                />
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              {mode === "login" ? "Sign In" : "Create Account"}
+            </DialogTitle>
+            <DialogDescription>
+              {mode === "login"
+                ? "Sign in to share your voting intention"
+                : "Create an account to participate"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            {mode === "register" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="auth-firstName">First Name</Label>
+                  <Input
+                    id="auth-firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="auth-lastName">Last Name</Label>
+                  <Input
+                    id="auth-lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    autoComplete="family-name"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe"
-                />
-              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="auth-email">Email</Label>
+              <Input
+                id="auth-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoComplete="email"
+                autoFocus
+              />
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="auth-password">Password</Label>
+              <Input
+                id="auth-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
+                required
+                minLength={mode === "register" ? 8 : undefined}
+                autoComplete={mode === "register" ? "new-password" : "current-password"}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
-              required
-              minLength={mode === "register" ? 8 : undefined}
-            />
-          </div>
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+                {error}
+              </p>
+            )}
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {mode === "login" ? "Sign In" : "Create Account"}
+            </Button>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {mode === "login" ? "Sign In" : "Create Account"}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button
-              type="button"
-              onClick={switchMode}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              {mode === "login" ? "Create one" : "Sign in"}
-            </button>
-          </p>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <p className="text-center text-sm text-muted-foreground">
+              {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+              <button
+                type="button"
+                onClick={switchMode}
+                className="text-primary font-medium underline-offset-4 hover:underline focus:outline-none focus:underline"
+              >
+                {mode === "login" ? "Create one" : "Sign in"}
+              </button>
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
