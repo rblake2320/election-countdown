@@ -40,22 +40,29 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  // Handle Dark Mode — persist preference
+  // Handle Dark Mode — persist preference (safe for iframes that block localStorage)
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      setIsDark(true);
-      document.documentElement.classList.add("dark");
+    try {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark") {
+        setIsDark(true);
+        document.documentElement.classList.add("dark");
+      }
+    } catch {
+      // localStorage blocked (e.g. sandboxed iframe)
     }
   }, []);
 
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+    }
+    try {
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    } catch {
+      // localStorage blocked
     }
   }, [isDark]);
 

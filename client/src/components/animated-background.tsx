@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function AnimatedBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    try {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -118,7 +120,12 @@ export function AnimatedBackground() {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", init);
     };
+    } catch {
+      setHasError(true);
+    }
   }, []);
+
+  if (hasError) return null;
 
   return (
     <canvas
