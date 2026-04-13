@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -203,6 +203,13 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
 
   const selectedIntent = form.watch("intent");
 
+  const pointerFiredRef = useRef(false);
+
+  const handleOpenVote = useCallback(() => {
+    if (open) return;
+    setOpen(true);
+  }, [open]);
+
   const handleClose = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
@@ -216,7 +223,8 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
       <Button
         variant="outline"
         className="gap-2 border-primary/20 hover:border-primary/40"
-        onClick={() => setOpen(true)}
+        onPointerDown={() => { pointerFiredRef.current = true; handleOpenVote(); }}
+        onClick={() => { if (pointerFiredRef.current) { pointerFiredRef.current = false; return; } handleOpenVote(); }}
       >
         <Vote className="h-4 w-4" />
         {existingIntent ? "Update Intent" : "Share Your Vote Plan"}

@@ -151,11 +151,11 @@ export default function Home() {
             {isDark ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
 
-          {/* Auth: only show sign-in button if NOT signed in */}
+          {/* Auth: key forces clean remount when auth state changes */}
           {authLoading ? (
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-muted animate-pulse" />
           ) : isAuthenticated && user ? (
-            <DropdownMenu>
+            <DropdownMenu key="user-menu">
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full">
                   <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
@@ -224,7 +224,7 @@ export default function Home() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <AuthDialog />
+            <AuthDialog key="sign-in" />
           )}
         </div>
       </header>

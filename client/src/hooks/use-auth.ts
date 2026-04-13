@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef } from "react";
 
 /**
  * Lightweight client-side user shape.
@@ -60,6 +59,8 @@ function generateEcId(): string {
 }
 
 // ── Detect if backend API is available ──
+// We check once per page load. The check must verify we get a REAL API
+// response (JSON), not an HTML page from the hosting platform.
 
 let backendAvailable: boolean | null = null;
 
@@ -70,7 +71,13 @@ async function checkBackend(): Promise<boolean> {
       credentials: "include",
       signal: AbortSignal.timeout(2000),
     });
-    // If we get ANY response (even 401), the backend is alive
+    // Must be a JSON API response. If the host returns HTML (e.g.
+    // Perplexity's iframe host serving its own page), that's NOT our backend.
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      backendAvailable = false;
+      return false;
+    }
     backendAvailable = true;
     return true;
   } catch {
@@ -174,7 +181,8 @@ function localFetchUser(): ClientUser | null {
 
 async function localLogin(data: { email: string; password: string }): Promise<ClientUser> {
   const users = getLocalUsers();
-  const entry = users[data.email.toLowerCase()];
+  const key = data.email.toLowerCase().trim();
+  const entry = users[key];
   if (!entry) {
     throw new Error("No account found with that email. Please create an account first.");
   }
@@ -182,7 +190,7 @@ async function localLogin(data: { email: string; password: string }): Promise<Cl
   if (hash !== entry.passwordHash) {
     throw new Error("Incorrect password. Please try again.");
   }
-  safeSet(LOCAL_SESSION_KEY, data.email.toLowerCase());
+  safeSet(LOCAL_SESSION_KEY, key);
   const { passwordHash, ...user } = entry;
   return user;
 }
@@ -194,7 +202,7 @@ async function localRegister(data: {
   lastName?: string;
 }): Promise<ClientUser> {
   const users = getLocalUsers();
-  const key = data.email.toLowerCase();
+  const key = data.email.toLowerCase().trim();
   if (users[key]) {
     throw new Error("An account with that email already exists. Please sign in.");
   }
@@ -226,6 +234,7 @@ async function localRegister(data: {
 }
 
 function localLogout() {
+  // Only remove the session pointer — NOT the user accounts store
   safeRemove(LOCAL_SESSION_KEY);
 }
 
@@ -299,6 +308,9 @@ export function useAuth() {
     mutationFn: logoutFn,
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      // Also clear any cached intent/verify queries
+      queryClient.invalidateQueries({ queryKey: ["/api/intent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/verify/status"] });
     },
   });
 

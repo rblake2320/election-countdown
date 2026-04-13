@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,30 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
 
   const isPending = isLoggingIn || isRegistering;
 
-  // Manual open handler — fixes Bug #1 (first-click dead in iframes)
+  // Track pointer state to prevent double-fire
+  const pointerFiredRef = useRef(false);
+
+  // Manual open handler — fires on BOTH pointerdown and click for maximum
+  // reliability. Radix DropdownMenu's close animation injects a global
+  // pointerdown blocker that can eat clicks on freshly-mounted elements.
   const handleOpen = useCallback(() => {
+    if (open) return; // already open
     setOpen(true);
-  }, []);
+  }, [open]);
+
+  const handlePointerDown = useCallback(() => {
+    pointerFiredRef.current = true;
+    handleOpen();
+  }, [handleOpen]);
+
+  const handleClick = useCallback(() => {
+    // If pointerdown already opened it, skip
+    if (pointerFiredRef.current) {
+      pointerFiredRef.current = false;
+      return;
+    }
+    handleOpen();
+  }, [handleOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +115,8 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
           variant="default"
           size="sm"
           className="gap-2"
-          onClick={handleOpen}
+          onPointerDown={handlePointerDown}
+          onClick={handleClick}
         >
           <LogIn className="h-4 w-4" />
           <span className="hidden sm:inline">Sign In</span>
