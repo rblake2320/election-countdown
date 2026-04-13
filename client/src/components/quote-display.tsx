@@ -11,117 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface QuoteItem {
-  id: string;
-  text: string;
-  author: string;
-  source: string;
-  year: string;
-  affiliation: "left" | "right" | "neutral";
-}
-
-const QUOTES: QuoteItem[] = [
-  // Democrat / left-leaning
-  {
-    id: "kennedy",
-    text: "Ask not what your country can do for you \u2013 ask what you can do for your country.",
-    author: "John F. Kennedy",
-    source: "Inaugural Address",
-    year: "1961",
-    affiliation: "left",
-  },
-  {
-    id: "fdr",
-    text: "The only thing we have to fear is fear itself.",
-    author: "Franklin D. Roosevelt",
-    source: "First Inaugural Address",
-    year: "1933",
-    affiliation: "left",
-  },
-  {
-    id: "obama",
-    text: "Change will not come if we wait for some other person or some other time. We are the ones we\u2019ve been waiting for.",
-    author: "Barack Obama",
-    source: "Campaign Speech",
-    year: "2008",
-    affiliation: "left",
-  },
-  {
-    id: "lbj",
-    text: "We shall overcome because the arc of the moral universe is long, but it bends toward justice.",
-    author: "Lyndon B. Johnson",
-    source: "Address to Congress",
-    year: "1965",
-    affiliation: "left",
-  },
-  // Republican / right-leaning
-  {
-    id: "reagan",
-    text: "Freedom is never more than one generation away from extinction. We didn\u2019t pass it to our children in the bloodstream.",
-    author: "Ronald Reagan",
-    source: "Address to the Phoenix Chamber of Commerce",
-    year: "1961",
-    affiliation: "right",
-  },
-  {
-    id: "eisenhower",
-    text: "The future of this republic is in the hands of the American voter.",
-    author: "Dwight D. Eisenhower",
-    source: "Campaign Speech",
-    year: "1952",
-    affiliation: "right",
-  },
-  {
-    id: "lincoln",
-    text: "Government of the people, by the people, for the people, shall not perish from the earth.",
-    author: "Abraham Lincoln",
-    source: "Gettysburg Address",
-    year: "1863",
-    affiliation: "right",
-  },
-  {
-    id: "coolidge",
-    text: "The business of America is business. The chief ideal of the American people is idealism.",
-    author: "Calvin Coolidge",
-    source: "Address to the American Society of Newspaper Editors",
-    year: "1925",
-    affiliation: "right",
-  },
-  // Neutral / independent
-  {
-    id: "franklin",
-    text: "Those who would give up essential Liberty, to purchase a little temporary Safety, deserve neither Liberty nor Safety.",
-    author: "Benjamin Franklin",
-    source: "Reply to the Governor, Pennsylvania Assembly",
-    year: "1755",
-    affiliation: "neutral",
-  },
-  {
-    id: "mlk",
-    text: "The time is always right to do what is right.",
-    author: "Martin Luther King Jr.",
-    source: "Commencement Address, Oberlin College",
-    year: "1965",
-    affiliation: "neutral",
-  },
-  {
-    id: "washington",
-    text: "Liberty, when it begins to take root, is a plant of rapid growth.",
-    author: "George Washington",
-    source: "Letter to James Madison",
-    year: "1788",
-    affiliation: "neutral",
-  },
-  {
-    id: "twain",
-    text: "Loyalty to the country always. Loyalty to the government when it deserves it.",
-    author: "Mark Twain",
-    source: "The Czar\u2019s Soliloquy",
-    year: "1905",
-    affiliation: "neutral",
-  },
-];
+import { QUOTES, type QuoteItem } from "@/data/quotes";
 
 interface QuoteDisplayProps {
   isHidden: boolean;
@@ -201,14 +91,6 @@ export function QuoteDisplay({
     onPreferenceChange?.(null);
   };
 
-  const selectQuote = (quoteId: string) => {
-    const quote = QUOTES.find((q) => q.id === quoteId);
-    if (quote) {
-      setCurrentQuote(quote);
-      onPreferenceChange?.(quoteId);
-    }
-  };
-
   if (isHidden) {
     return (
       <button
@@ -237,7 +119,7 @@ export function QuoteDisplay({
         className="text-center max-w-lg mx-auto px-4 relative group"
       >
         <p className="text-muted-foreground text-sm leading-relaxed italic font-serif">
-          "{currentQuote.text}"
+          &ldquo;{currentQuote.text}&rdquo;
         </p>
         <div className="mt-4 flex flex-col items-center gap-1">
           <div className="flex items-center gap-2">
@@ -277,20 +159,41 @@ export function QuoteDisplay({
                 <Settings2 className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
+            <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
               <DropdownMenuLabel className="text-xs">
-                Choose a Quote
+                Choose a Quote ({relevantQuotes.length} available)
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {relevantQuotes.map((quote) => (
-                <DropdownMenuItem
-                  key={quote.id}
-                  onClick={() => selectQuote(quote.id)}
-                  className="text-xs"
-                >
-                  {quote.author}
-                </DropdownMenuItem>
-              ))}
+              {/* Show unique authors from relevant pool */}
+              {Array.from(new Set(relevantQuotes.map((q) => q.author))).map((author) => {
+                const authorQuotes = relevantQuotes.filter((q) => q.author === author);
+                if (authorQuotes.length === 1) {
+                  return (
+                    <DropdownMenuItem
+                      key={authorQuotes[0].id}
+                      onClick={() => {
+                        setCurrentQuote(authorQuotes[0]);
+                        onPreferenceChange?.(authorQuotes[0].id);
+                      }}
+                      className="text-xs"
+                    >
+                      {author}
+                    </DropdownMenuItem>
+                  );
+                }
+                return authorQuotes.map((q, i) => (
+                  <DropdownMenuItem
+                    key={q.id}
+                    onClick={() => {
+                      setCurrentQuote(q);
+                      onPreferenceChange?.(q.id);
+                    }}
+                    className="text-xs"
+                  >
+                    {author} ({i + 1})
+                  </DropdownMenuItem>
+                ));
+              })}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={hideQuotes}
