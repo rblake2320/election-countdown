@@ -1,6 +1,7 @@
 # Environment / secrets
 .env
 .env.*
+.env.local
 !.env.example
 
 # Python
@@ -32,6 +33,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Build artifacts
+*.tar.gz
+
 # IDE / OS
 .vscode/
 .idea/
@@ -41,6 +45,10 @@ desktop.ini
 
 # Logs
 *.log
+
+# Local session files
+.claude/
+.local/
 
 # AI local-only notes
 CLAUDE.local.md

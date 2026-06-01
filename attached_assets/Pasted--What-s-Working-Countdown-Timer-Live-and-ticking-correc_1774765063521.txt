@@ -1,0 +1,47 @@
+✅ What's Working
+Countdown Timer
+
+Live and ticking correctly for both elections
+2026 Midterm: 218d 23h (accurate for Nov 3, 2026)
+2028 Presidential: 953d 23h (accurate for Nov 7, 2028)
+Flip animation on the seconds tile renders nicely
+
+Election Switcher — all 4 methods work:
+
+∧/∨ chevron arrow buttons (Previous/Next)
+Keyboard ↑↓ arrow keys
+Dot nav direct buttons ("Show 2026 Midterm" / "Show 2028 Presidential")
+
+Collapse/Expand
+
+The ^ (up) chevron collapses the countdown tiles
+The ∨ (down) chevron restores them
+
+Dark Mode Toggle
+
+Works, full dark theme applies correctly
+Toggle icon changes correctly
+
+Quote Controls
+
+"Show Different Quote" rotates to a new quote ✅
+"Quote Settings" dropdown opens a picker with 8 authors ✅
+Selecting a specific author switches the quote immediately ✅
+"Hide Quotes" (both the X button and the red option in settings) hides the quote ✅
+
+Sign-In / OAuth Flow
+
+Both "Sign In" (header) and "Sign in to participate" (body) links correctly redirect to Replit's OAuth consent screen with proper permissions listed ✅
+
+No JS Console Errors — clean console, no runtime errors ✅
+
+🐛 Bugs Found
+Bug 1 — Dot nav indicator is inverted
+The two dot indicators are backwards relative to their content. The left dot (index 0) activates when 2028 Presidential is shown, and the right dot activates when 2026 Midterm is shown. It should be chronological left-to-right (2026 left, 2028 right).
+Bug 2 — No way to restore hidden quotes
+After clicking "Hide Quote" (the × button below the quote), the entire quote section disappears with no button to bring it back. The user has to refresh the page. A "Show Quote" toggle or persistent button should be added. The "Hide Quotes" option inside the Settings dropdown has the same problem.
+Bug 3 — Countdown target is off by one day
+The 2026 Midterm countdown targets November 2 at midnight Eastern, but Election Day 2026 is November 3 (first Tuesday after Nov 1). The countdown should target Nov 3 midnight ET.
+Bug 4 — Collapse state persists through hot reload
+After collapsing the countdown with the ^ button and doing an F5 reload, the page reloads in the collapsed state rather than always opening expanded. There's no localStorage value causing this — it appears to be a React state or HMR artifact. In a cold-load production environment this may not occur, but it's worth verifying.
+Minor — Header logo briefly disappears after dark/light toggle (transient visual glitch, corrects itself).

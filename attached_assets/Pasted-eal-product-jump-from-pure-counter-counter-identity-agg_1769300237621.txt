@@ -1,0 +1,98 @@
+eal product jump: from “pure counter” → “counter + identity + aggregation + money.” Here’s a clean way to design it without painting yourself into a privacy/security corner.
+
+1) UX: dual countdown with “flip”
+
+Front-end only (no login needed):
+
+Default view: Midterms countdown
+
+Swipe/scroll up/down (or arrows) flips between:
+
+Midterms
+
+Presidential
+
+Optional: show both in a compact “secondary” line so users always know both are tracked.
+
+This is safe, fast, and keeps the “just a counter” experience intact.
+
+2) “Login” should be about bot-resistance + rate limiting, not identity
+
+If the goal is “verify they’re not a bot,” don’t do usernames/passwords.
+Use:
+
+Email magic link (simple, low friction) or OAuth (Google/Apple)
+
+Add Turnstile (Cloudflare) or reCAPTCHA before account creation and before submitting “vote plan”
+
+Enforce one vote-intent record per account (+ cooldown / update allowed)
+
+This gives you “real-ish humans” without collecting names/addresses.
+
+3) Data model: minimal PII, maximum utility
+
+What you said you want:
+
+party / vote intent (red/blue)
+
+age, sex, state (city optional)
+
+donations optional
+
+analytics optionally shared if they donate
+
+Safer version (recommended):
+
+Store age range (18–24, 25–34, …) instead of exact age
+
+Store state required, city optional
+
+“sex” → treat as optional, allow “prefer not to say”
+
+Store “vote plan” as a single field like: {leans: red|blue|undecided} (avoid capturing candidate names unless you really need it)
+
+Important reality check: “how they plan to vote” + demographics is sensitive. If you ever show breakdowns, you must prevent doxx-by-aggregation:
+
+Only show segmented stats when group size ≥ N (e.g., N=50 or 100)
+
+Otherwise show “insufficient sample”
+
+4) The red/blue thin bar logic (your 50K threshold idea)
+
+Do it in layers:
+
+Before 50,000 linked accounts: bar is always 50/50 (or hidden)
+
+At/after 50K: bar reflects aggregate counts of red vs blue vote intent among linked accounts
+
+Backend endpoints:
+
+GET /stats → returns totals + threshold gating flag
+
+POST /intent → saves/updates the user’s intent (auth required)
+
+5) Donations + “send analytics if they want”
+
+Donations introduce compliance/chargebacks/tax realities—keep it clean:
+
+Use Stripe Checkout (fastest + safest)
+
+Donation record is separate from vote intent
+
+Let donors opt-in to receive analytics via email (that’s the only time you need email beyond login)
+
+6) Backend + DB recommendation (simple + scalable on Replit)
+
+Postgres (Replit DB) for durability
+
+API server (Node) with:
+
+Auth sessions/tokens
+
+Turnstile verification
+
+CRUD for profile + intent
+
+Aggregate stats
+
+Store only: user_id, auth_provider, created_at, demographics, intent, donation_opt_in
