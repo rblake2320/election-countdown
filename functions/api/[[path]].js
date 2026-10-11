@@ -6,6 +6,12 @@ const MAX_JSON_BYTES = 32 * 1024;
 const MIN_PROD_SECRET_LENGTH = 32;
 const PASSWORD_HASH_ITERATIONS = 100000;
 const INTENTS = new Set(["red", "blue", "independent", "undecided"]);
+const AGE_RANGES = new Set(["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]);
+const SEXES = new Set(["male", "female", "other", "prefer_not_to_say"]);
+// Written only by the server; clients may not send these through /track (they feed admin metrics).
+const SERVER_EVENT_TYPES = new Set(["login", "register", "intent_saved", "intent_changed"]);
+const MAX_TRACK_BATCH = 25;
+const STATS_MAX_AGE_SECONDS = 30;
 // Elections a vote intent can be recorded for. Ids match the client countdown ids.
 const ELECTIONS = new Set(["midterm-2026", "presidential-2028"]);
 const DEFAULT_ELECTION = "midterm-2026";
@@ -83,6 +89,8 @@ export async function onRequest(context) {
 
     return json({ message: "Not found" }, 404);
   } catch (error) {
+    // Visible in `wrangler pages deployment tail`; the client still gets no internals.
+    console.error("api error", context.request.method, new URL(context.request.url).pathname, error?.stack || String(error));
     return json({ message: "Server error" }, 500);
   }
 }
@@ -229,7 +237,8 @@ async function ensureSchema(env) {
     ].map((statement) => env.DB.prepare(statement)));
   }
 
-  await env.DB.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')").run();
+  // expires_at is an ISO string; datetime('now') uses a different format, so compare like with like.
+  await env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(new Date().toISOString()).run();
   await env.DB.prepare("DELETE FROM rate_limits WHERE bucket < ?").bind(Date.now() - 2 * 24 * 60 * 60 * 1000).run();
   // Re-check on the next request until the migration lands, so no isolate stays stuck at 503.
   schemaReady = !legacyIntentSchema;
@@ -238,7 +247,7 @@ async function ensureSchema(env) {
 async function register(request, env) {
   const input = await readJson(request);
   const email = normalizeEmail(input.email);
-  if (!email || !input.password || String(input.password).length < 8) {
+  if (!email || email.length > 254 || typeof input.password !== "string" || input.password.length < 8 || input.password.length > 256) {
     return json({ message: "Valid email and 8+ character password are required" }, 400);
   }
 
@@ -273,20 +282,28 @@ async function register(request, env) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(user.id, user.ecId, user.email, passwordHash, salt, user.firstName, user.lastName, now, now).run();
 
+  await writeEvent(env, request, user, "register", { method: "password" });
   return withSession(json(user, 200), await createSession(request, env, user.id));
 }
 
 async function login(request, env) {
   const input = await readJson(request);
   const email = normalizeEmail(input.email);
+  const password = typeof input.password === "string" ? input.password.slice(0, 256) : "";
   const row = email
     ? await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first()
     : null;
-  if (!row || !(await verifyPassword(input.password || "", row.password_salt, row.password_hash))) {
+  if (!row) {
+    // Same PBKDF2 cost as a real check, so response time doesn't reveal whether the email exists.
+    await hashPassword(password, "no-such-user");
+    return json({ message: "Invalid email or password" }, 401);
+  }
+  if (!(await verifyPassword(password, row.password_salt, row.password_hash))) {
     return json({ message: "Invalid email or password" }, 401);
   }
 
   const user = publicUser(row);
+  await writeEvent(env, request, user, "login", { method: "password" });
   return withSession(json(user, 200), await createSession(request, env, user.id));
 }
 
@@ -360,6 +377,11 @@ async function saveIntent(request, user, env, queryElection) {
   const input = await readJson(request);
   if (!INTENTS.has(input.intent) || !STATES.has(input.state)) {
     return json({ message: "Valid intent and state are required" }, 400);
+  }
+  // Free text here would create junk segments in the breakdowns; the form only sends these values.
+  if ((input.ageRange != null && input.ageRange !== "" && !AGE_RANGES.has(input.ageRange)) ||
+      (input.sex != null && input.sex !== "" && !SEXES.has(input.sex))) {
+    return json({ message: "Invalid age range or sex" }, 400);
   }
   // The body wins over ?election= so a client can post to /api/intent with either.
   const election = input.electionId == null ? queryElection : electionFrom(input.electionId);
@@ -454,7 +476,7 @@ async function stats(env, election) {
     redRange: thresholdMet ? percentRange(red, total) : null,
     blueRange: thresholdMet ? percentRange(blue, total) : null,
     undecided: thresholdMet ? byIntent.undecided || 0 : 0
-  });
+  }, 200, { "cache-control": `public, max-age=${STATS_MAX_AGE_SECONDS}` });
 }
 
 async function donations(user, env) {
@@ -543,18 +565,26 @@ async function exportVotes(request, env) {
 }
 
 async function track(type, request, user, env) {
-  const cleanType = type.replace(/[^a-z0-9_-]/gi, "").slice(0, 40);
+  const cleanType = cleanEventType(type);
   const payload = await safeJson(request);
   if (cleanType === "batch" && Array.isArray(payload.events)) {
-    const events = payload.events.slice(0, 50);
-    for (const event of events) {
-      const eventType = String(event.type || event.eventType || "event").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "event";
-      await writeEvent(env, request, user, eventType, trimPayload(event.payload || event));
+    const events = payload.events
+      .slice(0, MAX_TRACK_BATCH)
+      .map((event) => ({ type: cleanEventType(event?.type || event?.eventType), payload: trimPayload(event?.payload || event) }))
+      .filter((event) => !SERVER_EVENT_TYPES.has(event.type));
+    const ip = await ipHash(request, env);
+    if (events.length) {
+      await env.DB.batch(events.map((event) => eventStatement(env, request, user, event.type, event.payload, ip)));
     }
     return json({ ok: true, stored: events.length });
   }
-  await writeEvent(env, request, user, cleanType || "event", trimPayload(payload));
+  if (SERVER_EVENT_TYPES.has(cleanType)) return json({ message: "Reserved event type" }, 400);
+  await writeEvent(env, request, user, cleanType, trimPayload(payload));
   return json({ ok: true });
+}
+
+function cleanEventType(value) {
+  return String(value || "event").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "event";
 }
 
 function verifyStatus(user) {
@@ -627,8 +657,11 @@ function withSession(response, cookie) {
 }
 
 async function writeEvent(env, request, user, type, payload) {
-  const url = new URL(request.url);
-  await env.DB.prepare(
+  await eventStatement(env, request, user, type, payload, await ipHash(request, env)).run();
+}
+
+function eventStatement(env, request, user, type, payload, ip) {
+  return env.DB.prepare(
     `INSERT INTO tracking_events (
       id, event_type, user_id, payload_json, path, referrer, user_agent, ip_hash, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -637,18 +670,18 @@ async function writeEvent(env, request, user, type, payload) {
     type,
     user?.id || null,
     JSON.stringify(payload || {}),
-    url.pathname,
-    request.headers.get("referer") || "",
-    request.headers.get("user-agent") || "",
-    await ipHash(request, env),
+    new URL(request.url).pathname,
+    (request.headers.get("referer") || "").slice(0, 500),
+    (request.headers.get("user-agent") || "").slice(0, 300),
+    ip,
     new Date().toISOString()
-  ).run();
+  );
 }
 
 function isAdmin(request, env) {
   const expected = String(env.ADMIN_SECRET || "");
   if (!validAdminSecret(expected, isProductionRequest(request))) return false;
-  return !!expected && request.headers.get("x-admin-secret") === expected;
+  return !!expected && timingSafeEqual(request.headers.get("x-admin-secret") || "", expected);
 }
 
 function validAdminSecret(secret, production) {
@@ -825,17 +858,24 @@ async function rateLimited(request, env, action, subject) {
   return null;
 }
 
-// Unlike ipHash (stored with events), this ignores the datacenter so one client maps to one key.
 async function rateLimitIp(request, env) {
-  const ip = request.headers.get("cf-connecting-ip") || "unknown";
-  return sha256(String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "") + ":rate-limit:" + ip);
+  return hmacHex(ipSecret(env), "rate-limit:" + (request.headers.get("cf-connecting-ip") || "unknown"));
 }
 
+// HMAC of the IP alone: one visitor maps to one stable value across datacenters (the earlier
+// hash mixed in the colo), and the value can't be reversed without IP_HASH_SECRET.
 async function ipHash(request, env) {
   const ip = request.headers.get("cf-connecting-ip") || "";
-  const secret = String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "");
-  const salt = secret + ":" + String(request.cf?.colo || "") + ":" + String(request.headers.get("x-forwarded-proto") || "") + ":";
-  return ip ? sha256(salt + ip) : "";
+  return ip ? hmacHex(ipSecret(env), "ip:" + ip) : "";
+}
+
+function ipSecret(env) {
+  return String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "");
+}
+
+async function hmacHex(secret, message) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret || "unset"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return hex(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message))));
 }
 
 function trimPayload(value) {
@@ -857,8 +897,9 @@ function randomToken(bytes) {
 
 function ecId() {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
   let code = "";
-  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (const byte of bytes) code += alphabet[byte % alphabet.length];
   return `EC-${code}`;
 }
 
@@ -871,12 +912,14 @@ function readCookie(request, name) {
   return "";
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       ...securityHeaders(),
-      "content-type": "application/json; charset=utf-8"
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders
     }
   });
 }
