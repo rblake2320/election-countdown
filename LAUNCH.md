@@ -30,7 +30,15 @@ This package is ready for Cloudflare Pages with Functions and D1.
    npx wrangler pages secret put IP_HASH_SECRET
    ```
 
-6. Deploy the folder with Cloudflare Pages.
+6. Deploy from the repo root. `wrangler.toml` publishes only `public/` (the site) plus
+   `functions/` (the API); nothing else in the repo is uploaded.
+
+   ```bash
+   npx wrangler pages deploy
+   ```
+
+   Anything the site serves must live in `public/`. Never point `pages_build_output_dir` back at
+   the repo root: every file there, including source and any `.env`, would become public.
 
 7. Verify the production health endpoint:
 

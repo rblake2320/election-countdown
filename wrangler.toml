@@ -1,5 +1,5 @@
 name = "election-countdown"
-pages_build_output_dir = "."
+pages_build_output_dir = "public"
 compatibility_date = "2026-05-14"
 
 [[d1_databases]]
