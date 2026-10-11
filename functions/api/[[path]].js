@@ -2,7 +2,7 @@ import { computeDailyRollup, readRollups, isDay } from "../../lib/analytics.js";
 import {
   OAUTH_COOKIE, OAuthError, clearOAuthCookie, enabledProviders, fetchVerifiedProfile,
   providerConfig, readOAuthCookie, safeReturnTo, startAuthorization
-} from "./_oauth.js";
+} from "../../lib/oauth.js";
 
 const SESSION_COOKIE = "ec_session";
 const SESSION_DAYS = 30;
@@ -15,7 +15,7 @@ const INTENTS = new Set(["red", "blue", "independent", "undecided"]);
 const AGE_RANGES = new Set(["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]);
 const SEXES = new Set(["male", "female", "other", "prefer_not_to_say"]);
 // Written only by the server; clients may not send these through /track (they feed admin metrics).
-const SERVER_EVENT_TYPES = new Set(["login", "register", "intent_saved", "intent_changed", "anon_intent_saved"]);
+const SERVER_EVENT_TYPES = new Set(["login", "register", "intent_saved", "intent_changed", "anon_intent_saved", "preferences_saved"]);
 const MAX_TRACK_BATCH = 25;
 const STATS_MAX_AGE_SECONDS = 30;
 // Elections a vote intent can be recorded for. Ids match the client countdown ids.
@@ -75,6 +75,7 @@ export async function onRequest(context) {
     }
     if ((path === "/logout" || path === "/auth/logout" || path === "/auth/signout") && request.method === "POST") return csrfProtected(request, () => logout(request, env));
     if (path === "/account" && request.method === "DELETE") return csrfProtected(request, () => deleteAccount(request, user, env));
+    if (path === "/account/preferences" && request.method === "PUT") return csrfProtected(request, () => savePreferences(request, user, env));
 
     if (legacyIntentSchema && (path === "/account" || path.startsWith("/intent") || path === "/stats" || path.startsWith("/donor/") || path.startsWith("/admin/"))) {
       return json({ message: "Database migration pending" }, 503);
@@ -270,6 +271,17 @@ async function ensureSchema(env) {
     "CREATE INDEX IF NOT EXISTS idx_tracking_events_type_created ON tracking_events(event_type, created_at)"
   ];
   await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+
+  // users.preferences_json arrived with migration 0005; add it if this database predates it.
+  const userColumns = await env.DB.prepare("SELECT name FROM pragma_table_info('users')").all();
+  if (!(userColumns.results || []).some((column) => column.name === "preferences_json")) {
+    try {
+      await env.DB.prepare("ALTER TABLE users ADD COLUMN preferences_json TEXT").run();
+    } catch (error) {
+      // Another isolate may have added it first.
+      if (!/duplicate column/i.test(String(error?.message))) throw error;
+    }
+  }
 
   // A database created before migrations/0001_election_id.sql still has one intent per user.
   // Election indexes are only created once the column exists, so an unmigrated database
@@ -1010,9 +1022,44 @@ function publicUser(row) {
     verifiedAt: row.verified_at,
     trustScore: row.trust_score || 0,
     flaggedAsBot: !!row.flagged_as_bot,
+    preferences: readPreferences(row.preferences_json),
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+}
+
+// Appearance perks for verified accounts (email verified by Google/GitHub).
+const THEMES = new Set([
+  "classic", "party", "crimson-gold", "navy-orange", "forest-silver", "purple-gold", "teal-black", "scarlet-gray"
+]);
+const NUMBER_STYLES = new Set(["flat", "3d"]);
+
+function readPreferences(raw) {
+  try {
+    const value = JSON.parse(raw || "{}");
+    return {
+      theme: THEMES.has(value.theme) ? value.theme : "classic",
+      numbers: NUMBER_STYLES.has(value.numbers) ? value.numbers : "flat"
+    };
+  } catch {
+    return { theme: "classic", numbers: "flat" };
+  }
+}
+
+async function savePreferences(request, user, env) {
+  if (!user) return json({ message: "Sign in required" }, 401);
+  if (!user.emailVerified) {
+    return json({ message: "Themes are a perk for verified accounts. Sign in with Google or GitHub to unlock them." }, 403);
+  }
+  const input = await readJson(request);
+  if (!THEMES.has(input.theme) || !NUMBER_STYLES.has(input.numbers)) {
+    return json({ message: "Unknown theme or number style" }, 400);
+  }
+  const preferences = { theme: input.theme, numbers: input.numbers };
+  await env.DB.prepare("UPDATE users SET preferences_json = ?, updated_at = ? WHERE id = ?")
+    .bind(JSON.stringify(preferences), new Date().toISOString(), user.id).run();
+  await writeEvent(env, request, user, "preferences_saved", preferences);
+  return json(preferences);
 }
 
 function publicIntent(row) {

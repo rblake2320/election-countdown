@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { nextElection as getNextElection, type Election, type VotableElectionId } from "@/lib/elections";
 import { getVisitorId } from "@/lib/visitor";
+import { applyAppearance } from "@/lib/themes";
+import { PersonalizeDialog } from "@/components/personalize-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
@@ -14,7 +16,7 @@ import { ShareDrawer } from "@/components/share-drawer";
 import { VerificationBadge } from "@/components/verification-badge";
 import { VerificationDialog } from "@/components/verification-dialog";
 import { useTracking } from "@/hooks/use-tracking";
-import { Moon, Sun, LogOut, User, ShieldCheck } from "lucide-react";
+import { LogOut, User, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,7 +30,6 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-  const [isDark, setIsDark] = useState(false);
   const [quoteHidden, setQuoteHidden] = useState(false);
   // The election a vote intent is recorded for follows the countdown card on screen.
   const [votingFor, setVotingFor] = useState<VotableElectionId>(() => getNextElection().votesFor);
@@ -80,7 +81,7 @@ export default function Home() {
     enabled: !authLoading,
   });
 
-  // Dark mode is disabled for launch: always light, and clear any saved preference.
+  // Dark mode is disabled: always light, and clear any old saved preference.
   useEffect(() => {
     document.documentElement.classList.remove("dark");
     try {
@@ -88,14 +89,10 @@ export default function Home() {
     } catch {}
   }, []);
 
+  // Verified accounts get their saved theme / number style; everyone else the default look.
   useEffect(() => {
-    document.documentElement.classList.remove("dark");
-    try {
-      localStorage.removeItem("theme");
-    } catch {}
-  }, [isDark]);
-
-  const toggleTheme = () => {};
+    applyAppearance(user?.preferences, !!user?.emailVerified, existingIntent?.intent);
+  }, [user?.preferences, user?.emailVerified, existingIntent?.intent]);
 
   // Next upcoming event for the milestone banner
   const nextElection = useMemo(() => getNextElection(), []);
@@ -126,15 +123,9 @@ export default function Home() {
         <div className="flex items-center gap-1 sm:gap-2">
           <ShareDrawer />
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="rounded-full hover:bg-secondary w-9 h-9 sm:w-10 sm:h-10"
-            aria-label="Toggle theme"
-          >
-            {isDark ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
-          </Button>
+          {isAuthenticated && (
+            <PersonalizeDialog verified={!!user?.emailVerified} preferences={user?.preferences} intent={existingIntent?.intent} />
+          )}
 
           {/* Auth: key forces clean remount when auth state changes */}
           {authLoading ? (
