@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Vote, Loader2, Share2, Twitter, Link2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ELECTIONS, type VotableElectionId } from "@/lib/elections";
+import { getVisitorId } from "@/lib/visitor";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
 const VOTE_INTENTS = ["red", "blue", "independent", "undecided"] as const;
@@ -73,6 +74,8 @@ interface VoteIntentFormProps {
   isDonor?: boolean;
   /** Election this answer is recorded for; the API stores one answer per election. */
   electionId?: VotableElectionId;
+  /** Signed-out visitor: saves to the separate unverified pool. */
+  anonymous?: boolean;
 }
 
 function SharePrompt({ intent, onClose }: { intent: string; onClose: () => void }) {
@@ -140,7 +143,7 @@ function SharePrompt({ intent, onClose }: { intent: string; onClose: () => void 
   );
 }
 
-export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "midterm-2026" }: VoteIntentFormProps) {
+export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "midterm-2026", anonymous = false }: VoteIntentFormProps) {
   const electionTitle = ELECTIONS.find((e) => e.id === electionId)?.title ?? "the election";
   const [open, setOpen] = useState(false);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
@@ -163,11 +166,12 @@ export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
       try {
-        const response = await fetch("/api/intent", {
+        // Signed-out visitors vote into a separate, unverified pool keyed by their browser's visitor id.
+        const response = await fetch(anonymous ? "/api/intent/anonymous" : "/api/intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ ...data, electionId }),
+          body: JSON.stringify({ ...data, electionId, ...(anonymous ? { visitorId: getVisitorId() } : {}) }),
           signal: AbortSignal.timeout(3000),
         });
         if (!response.ok) {
@@ -179,8 +183,11 @@ export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "
         throw new Error("Failed to save voting intent");
       }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: async (_data, variables) => {
+      // /api/stats is browser-cached for 30 s; refresh that cached copy so the voter sees their vote.
+      await fetch(`/api/stats?election=${electionId}`, { cache: "reload" }).catch(() => {});
       queryClient.invalidateQueries({ queryKey: ["/api/intent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/intent/anonymous"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
         title: "Intent Saved",
@@ -238,6 +245,12 @@ export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "
             For the {electionTitle}. Share your voting intention to see how the country leans.
             Only combined totals are ever shown publicly.
           </DialogDescription>
+          {anonymous && (
+            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-900" data-testid="anonymous-vote-note">
+              You're not signed in, so this counts in the separate <strong>unverified</strong> tally.
+              Sign in to have your answer count in the verified totals.
+            </p>
+          )}
         </DialogHeader>
 
         <Form {...form}>

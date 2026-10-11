@@ -15,6 +15,8 @@ interface StatsData {
   bluePercent?: number;
   redRange?: string;
   blueRange?: string;
+  /** Signed-out votes, reported apart from the counted (account) totals. */
+  anonymous?: { total: number; note?: string };
 }
 
 // Convert exact percentage to a range for privacy (e.g., 47.3 -> "45-50%")
@@ -24,12 +26,22 @@ function toPercentRange(percent: number): string {
   return `${lower}-${upper}%`;
 }
 
-export function AggregateBar() {
+function AnonymousTally({ stats }: { stats: StatsData }) {
+  const count = stats.anonymous?.total ?? 0;
+  if (!count) return null;
+  return (
+    <p className="mt-2 text-center text-[11px] text-muted-foreground" data-testid="anonymous-tally" title={stats.anonymous?.note}>
+      + {count.toLocaleString()} unverified (signed-out) {count === 1 ? "vote" : "votes"}, counted separately and may include bots
+    </p>
+  );
+}
+
+export function AggregateBar({ electionId = "midterm-2026" }: { electionId?: string }) {
   const { data: stats, isLoading } = useQuery<StatsData>({
-    queryKey: ["/api/stats"],
+    queryKey: ["/api/stats", electionId],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/stats");
+        const res = await fetch(`/api/stats?election=${electionId}`);
         if (!res.ok) return null;
         return res.json();
       } catch {
@@ -55,7 +67,7 @@ export function AggregateBar() {
       <div className="w-full max-w-md mx-auto px-4 text-center">
         <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-2">
           <Users className="h-4 w-4" />
-          <span>{stats.total.toLocaleString()} participants</span>
+          <span data-testid="verified-total">{stats.total.toLocaleString()} verified {stats.total === 1 ? "participant" : "participants"}</span>
         </div>
         <div className="relative h-6 bg-muted/50 rounded-full overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
@@ -71,6 +83,7 @@ export function AggregateBar() {
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
+        <AnonymousTally stats={stats} />
       </div>
     );
   }
@@ -80,7 +93,7 @@ export function AggregateBar() {
     <div className="w-full max-w-md mx-auto px-4">
       <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-2">
         <Users className="h-4 w-4" />
-        <span>{stats.total.toLocaleString()} participants</span>
+        <span data-testid="verified-total">{stats.total.toLocaleString()} verified participants</span>
       </div>
 
       <div className="relative h-8 rounded-full overflow-hidden shadow-inner flex">
@@ -119,6 +132,7 @@ export function AggregateBar() {
         )}
         <span className="text-blue-600 font-medium">Democrat</span>
       </div>
+      <AnonymousTally stats={stats} />
     </div>
   );
 }
