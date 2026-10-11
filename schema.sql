@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE TABLE IF NOT EXISTS vote_intents (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL UNIQUE,
+  user_id TEXT NOT NULL,
+  election_id TEXT NOT NULL DEFAULT 'midterm-2026',
   intent TEXT NOT NULL CHECK (intent IN ('red', 'blue', 'independent', 'undecided')),
   state TEXT NOT NULL,
   age_range TEXT,
@@ -38,12 +39,14 @@ CREATE TABLE IF NOT EXISTS vote_intents (
   custom_candidate TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
+  UNIQUE (user_id, election_id),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS vote_intent_history (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
+  election_id TEXT NOT NULL DEFAULT 'midterm-2026',
   previous_intent TEXT,
   new_intent TEXT NOT NULL,
   previous_state TEXT,
@@ -88,8 +91,16 @@ CREATE TABLE IF NOT EXISTS donations (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
-CREATE INDEX IF NOT EXISTS idx_vote_intents_state ON vote_intents(state);
-CREATE INDEX IF NOT EXISTS idx_vote_intents_age ON vote_intents(age_range);
-CREATE INDEX IF NOT EXISTS idx_vote_intents_intent ON vote_intents(intent);
+CREATE INDEX IF NOT EXISTS idx_vote_intents_election_intent ON vote_intents(election_id, intent);
+CREATE INDEX IF NOT EXISTS idx_vote_intents_election_state ON vote_intents(election_id, state);
+CREATE INDEX IF NOT EXISTS idx_vote_intents_election_age ON vote_intents(election_id, age_range);
 CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user ON vote_intent_history(user_id, changed_at);
+CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user_election ON vote_intent_history(user_id, election_id, changed_at);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_type_created ON tracking_events(event_type, created_at);
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT NOT NULL,
+  bucket INTEGER NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (key, bucket)
+);

@@ -6,7 +6,20 @@ const MAX_JSON_BYTES = 32 * 1024;
 const MIN_PROD_SECRET_LENGTH = 32;
 const PASSWORD_HASH_ITERATIONS = 100000;
 const INTENTS = new Set(["red", "blue", "independent", "undecided"]);
+// Elections a vote intent can be recorded for. Ids match the client countdown ids.
+const ELECTIONS = new Set(["midterm-2026", "presidential-2028"]);
+const DEFAULT_ELECTION = "midterm-2026";
 let schemaReady = false;
+// Fixed-window limits per client (IP) or per user. Pages on *.pages.dev has no zone WAF,
+// so abuse limits live here.
+const RATE_LIMITS = {
+  register: { limit: 5, windowMinutes: 60 },
+  login: { limit: 20, windowMinutes: 15 },
+  intent: { limit: 30, windowMinutes: 60 },
+  track: { limit: 300, windowMinutes: 10 }
+};
+// True until migrations/0001_election_id.sql has been applied to this database.
+let legacyIntentSchema = false;
 const STATES = new Set([
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -34,21 +47,37 @@ export async function onRequest(context) {
 
     if (path === "/health" && request.method === "GET") return health(request, env);
     if ((path === "/auth/user" || path === "/auth/me" || path === "/auth/session" || path === "/me") && request.method === "GET") return json(user);
-    if (path === "/auth/register" && request.method === "POST") return register(request, env);
-    if ((path === "/login" || path === "/auth/login") && request.method === "POST") return login(request, env);
+    if (path === "/auth/register" && request.method === "POST") {
+      return (await rateLimited(request, env, "register")) || register(request, env);
+    }
+    if ((path === "/login" || path === "/auth/login") && request.method === "POST") {
+      return (await rateLimited(request, env, "login")) || login(request, env);
+    }
     if ((path === "/logout" || path === "/auth/logout" || path === "/auth/signout") && request.method === "POST") return csrfProtected(request, () => logout(request, env));
-    if (path === "/account" && request.method === "GET") return account(user, env);
     if (path === "/account" && request.method === "DELETE") return csrfProtected(request, () => deleteAccount(request, user, env));
-    if (path === "/intent" && request.method === "GET") return getIntent(user, env);
-    if (path === "/intent" && request.method === "POST") return csrfProtected(request, () => saveIntent(request, user, env));
+
+    if (legacyIntentSchema && (path === "/account" || path.startsWith("/intent") || path === "/stats" || path.startsWith("/donor/") || path.startsWith("/admin/"))) {
+      return json({ message: "Database migration pending" }, 503);
+    }
+    const election = electionFrom(url.searchParams.get("election"));
+    if (election === null) return json({ message: "Unknown election" }, 400);
+
+    if (path === "/account" && request.method === "GET") return account(user, env);
+    if (path === "/intent" && request.method === "GET") return getIntent(user, env, election);
+    if (path === "/intent" && request.method === "POST") {
+      return csrfProtected(request, async () =>
+        (user && await rateLimited(request, env, "intent", "user:" + user.id)) || saveIntent(request, user, env, election));
+    }
     if (path === "/intent/history" && request.method === "GET") return intentHistory(user, env);
-    if (path === "/intent/aggregate" && request.method === "GET") return stats(env);
-    if (path === "/stats" && request.method === "GET") return stats(env);
+    if (path === "/intent/aggregate" && request.method === "GET") return stats(env, election);
+    if (path === "/stats" && request.method === "GET") return stats(env, election);
     if (path === "/donations" && request.method === "GET") return donations(user, env);
-    if (path === "/donor/analytics" && request.method === "GET") return donorAnalytics(user, env);
-    if (path === "/admin/analytics" && request.method === "GET") return adminAnalytics(request, env);
+    if (path === "/donor/analytics" && request.method === "GET") return donorAnalytics(user, env, election);
+    if (path === "/admin/analytics" && request.method === "GET") return adminAnalytics(request, env, election);
     if (path === "/admin/export/votes.csv" && request.method === "GET") return exportVotes(request, env);
-    if (path.startsWith("/track/") && request.method === "POST") return track(path.slice(7), request, user, env);
+    if (path.startsWith("/track/") && request.method === "POST") {
+      return (await rateLimited(request, env, "track")) || track(path.slice(7), request, user, env);
+    }
     if (path === "/verify/status" && request.method === "GET") return verifyStatus(user);
     if (path.startsWith("/verify/") && request.method === "POST") return verificationStub(path, user, env);
 
@@ -123,7 +152,8 @@ async function ensureSchema(env) {
     )`,
     `CREATE TABLE IF NOT EXISTS vote_intents (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL UNIQUE,
+      user_id TEXT NOT NULL,
+      election_id TEXT NOT NULL DEFAULT 'midterm-2026',
       intent TEXT NOT NULL,
       state TEXT NOT NULL,
       age_range TEXT,
@@ -131,11 +161,13 @@ async function ensureSchema(env) {
       sex TEXT,
       custom_candidate TEXT,
       created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      UNIQUE (user_id, election_id)
     )`,
     `CREATE TABLE IF NOT EXISTS vote_intent_history (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
+      election_id TEXT NOT NULL DEFAULT 'midterm-2026',
       previous_intent TEXT,
       new_intent TEXT NOT NULL,
       previous_state TEXT,
@@ -170,17 +202,37 @@ async function ensureSchema(env) {
       provider_ref TEXT,
       created_at TEXT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT NOT NULL,
+      bucket INTEGER NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (key, bucket)
+    )`,
     "CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)",
-    "CREATE INDEX IF NOT EXISTS idx_vote_intents_state ON vote_intents(state)",
-    "CREATE INDEX IF NOT EXISTS idx_vote_intents_age ON vote_intents(age_range)",
-    "CREATE INDEX IF NOT EXISTS idx_vote_intents_intent ON vote_intents(intent)",
     "CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user ON vote_intent_history(user_id, changed_at)",
     "CREATE INDEX IF NOT EXISTS idx_tracking_events_type_created ON tracking_events(event_type, created_at)"
   ];
   await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+
+  // A database created before migrations/0001_election_id.sql still has one intent per user.
+  // Election indexes are only created once the column exists, so an unmigrated database
+  // degrades to 503 on intent routes instead of failing every request.
+  const columns = await env.DB.prepare("SELECT name FROM pragma_table_info('vote_intents')").all();
+  legacyIntentSchema = !(columns.results || []).some((column) => column.name === "election_id");
+  if (!legacyIntentSchema) {
+    await env.DB.batch([
+      "CREATE INDEX IF NOT EXISTS idx_vote_intents_election_intent ON vote_intents(election_id, intent)",
+      "CREATE INDEX IF NOT EXISTS idx_vote_intents_election_state ON vote_intents(election_id, state)",
+      "CREATE INDEX IF NOT EXISTS idx_vote_intents_election_age ON vote_intents(election_id, age_range)",
+      "CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user_election ON vote_intent_history(user_id, election_id, changed_at)"
+    ].map((statement) => env.DB.prepare(statement)));
+  }
+
   await env.DB.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')").run();
-  schemaReady = true;
+  await env.DB.prepare("DELETE FROM rate_limits WHERE bucket < ?").bind(Date.now() - 2 * 24 * 60 * 60 * 1000).run();
+  // Re-check on the next request until the migration lands, so no isolate stays stuck at 503.
+  schemaReady = !legacyIntentSchema;
 }
 
 async function register(request, env) {
@@ -191,7 +243,9 @@ async function register(request, env) {
   }
 
   const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
-  if (existing) return json({ message: "If this email is available, your account has been created. Check your inbox." }, 200);
+  // 200 with no user made the client treat the message object as a signed-in user.
+  // No email is ever sent, so the old "check your inbox" text was also untrue.
+  if (existing) return json({ message: "An account with this email already exists. Sign in instead." }, 409);
 
   const now = new Date().toISOString();
   const salt = randomToken(24);
@@ -266,20 +320,21 @@ async function deleteAccount(request, user, env) {
 
 async function account(user, env) {
   if (!user) return json({ message: "Sign in required" }, 401);
-  const intentRow = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ?").bind(user.id).first();
-  const intent = intentRow ? publicIntent(intentRow) : null;
+  const rows = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ?").bind(user.id).all();
+  const intents = Object.fromEntries((rows.results || []).map((row) => [row.election_id, publicIntent(row)]));
   const intentHistory = await readIntentHistory(user, env);
   return json({
     user,
     verification: verificationPayload(user),
-    intent,
+    intent: intents[DEFAULT_ELECTION] || null,
+    intents,
     intentHistory
   });
 }
 
-async function getIntent(user, env) {
+async function getIntent(user, env, election) {
   if (!user) return json(null, 401);
-  const row = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ?").bind(user.id).first();
+  const row = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ? AND election_id = ?").bind(user.id, election).first();
   return json(row ? publicIntent(row) : null);
 }
 
@@ -290,7 +345,7 @@ async function intentHistory(user, env) {
 
 async function readIntentHistory(user, env) {
   const rows = await env.DB.prepare(
-    `SELECT id, previous_intent AS previousIntent, new_intent AS newIntent,
+    `SELECT id, election_id AS electionId, previous_intent AS previousIntent, new_intent AS newIntent,
             previous_state AS previousState, new_state AS newState, changed_at AS changedAt
      FROM vote_intent_history
      WHERE user_id = ?
@@ -300,17 +355,21 @@ async function readIntentHistory(user, env) {
   return rows.results || [];
 }
 
-async function saveIntent(request, user, env) {
+async function saveIntent(request, user, env, queryElection) {
   if (!user) return json({ message: "Sign in required" }, 401);
   const input = await readJson(request);
   if (!INTENTS.has(input.intent) || !STATES.has(input.state)) {
     return json({ message: "Valid intent and state are required" }, 400);
   }
+  // The body wins over ?election= so a client can post to /api/intent with either.
+  const election = input.electionId == null ? queryElection : electionFrom(input.electionId);
+  if (election === null) return json({ message: "Unknown election" }, 400);
 
   const now = new Date().toISOString();
-  const existing = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ?").bind(user.id).first();
+  const existing = await env.DB.prepare("SELECT * FROM vote_intents WHERE user_id = ? AND election_id = ?").bind(user.id, election).first();
   const record = {
     id: existing?.id || crypto.randomUUID(),
+    electionId: election,
     createdAt: existing?.created_at || now,
     updatedAt: now,
     intent: input.intent,
@@ -323,9 +382,9 @@ async function saveIntent(request, user, env) {
 
   await env.DB.prepare(
     `INSERT INTO vote_intents (
-      id, user_id, intent, state, age_range, city, sex, custom_candidate, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET
+      id, user_id, election_id, intent, state, age_range, city, sex, custom_candidate, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, election_id) DO UPDATE SET
       intent = excluded.intent,
       state = excluded.state,
       age_range = excluded.age_range,
@@ -336,6 +395,7 @@ async function saveIntent(request, user, env) {
   ).bind(
     record.id,
     user.id,
+    election,
     record.intent,
     record.state,
     record.ageRange,
@@ -350,12 +410,13 @@ async function saveIntent(request, user, env) {
   const newPayload = { ...record, state: record.state };
   await env.DB.prepare(
     `INSERT INTO vote_intent_history (
-      id, user_id, previous_intent, new_intent, previous_state, new_state,
+      id, user_id, election_id, previous_intent, new_intent, previous_state, new_state,
       previous_payload_json, new_payload_json, changed_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     crypto.randomUUID(),
     user.id,
+    election,
     existing?.intent || null,
     record.intent,
     existing?.state || null,
@@ -366,6 +427,7 @@ async function saveIntent(request, user, env) {
   ).run();
 
   await writeEvent(env, request, user, existing ? "intent_changed" : "intent_saved", {
+    electionId: election,
     previousIntent: existing?.intent || null,
     newIntent: input.intent,
     previousState: existing?.state || null,
@@ -374,17 +436,15 @@ async function saveIntent(request, user, env) {
   return json({ ...record, state: record.state });
 }
 
-async function stats(env) {
-  const total = await scalar(env, "SELECT COUNT(*) FROM vote_intents");
-  const counts = await env.DB.prepare(
-    "SELECT intent, COUNT(*) AS count FROM vote_intents GROUP BY intent"
-  ).all();
-  const byIntent = Object.fromEntries((counts.results || []).map((row) => [row.intent, row.count]));
+async function stats(env, election) {
+  const byIntent = await countsBy(env, "intent", election);
+  const total = Object.values(byIntent).reduce((sum, count) => sum + count, 0);
   const thresholdMet = total >= MIN_PUBLIC_BREAKDOWN;
   const red = byIntent.red || 0;
   const blue = byIntent.blue || 0;
 
   return json({
+    electionId: election,
     total,
     showBar: thresholdMet,
     threshold: MIN_PUBLIC_BREAKDOWN,
@@ -405,14 +465,15 @@ async function donations(user, env) {
   return json(rows.results || []);
 }
 
-async function donorAnalytics(user, env) {
+async function donorAnalytics(user, env, election) {
   if (!user) return json({ message: "Sign in required" }, 401);
   const donated = await scalar(env, "SELECT COALESCE(SUM(amount), 0) FROM donations WHERE user_id = ?", [user.id]);
   if (donated < 100) return json({ message: "Donate at least $1 to access detailed analytics." }, 403);
 
-  const total = await scalar(env, "SELECT COUNT(*) FROM vote_intents");
-  const intentCounts = await countsBy(env, "intent");
+  const intentCounts = await countsBy(env, "intent", election);
+  const total = Object.values(intentCounts).reduce((sum, count) => sum + count, 0);
   return json({
+    electionId: election,
     donorTier: donated >= 10000 ? "premium" : donated >= 2500 ? "supporter" : "basic",
     thresholdMet: total >= MIN_PUBLIC_BREAKDOWN,
     votesByIntent: {
@@ -421,15 +482,18 @@ async function donorAnalytics(user, env) {
       blueRange: percentRange(intentCounts.blue || 0, total),
       undecidedRange: percentRange(intentCounts.undecided || 0, total)
     },
-    votesByState: await segmentedBreakdown(env, "state"),
-    votesByAge: await segmentedBreakdown(env, "age_range")
+    votesByState: await segmentedBreakdown(env, "state", election),
+    votesByAge: await segmentedBreakdown(env, "age_range", election)
   });
 }
 
-async function adminAnalytics(request, env) {
+async function adminAnalytics(request, env, election) {
   if (!isAdmin(request, env)) return json({ message: "Invalid admin credentials" }, 401);
-  const total = await scalar(env, "SELECT COUNT(*) FROM vote_intents");
-  const byIntent = await countsBy(env, "intent");
+  const byIntent = await countsBy(env, "intent", election);
+  const total = Object.values(byIntent).reduce((sum, count) => sum + count, 0);
+  const perElection = await env.DB.prepare(
+    "SELECT election_id AS electionId, COUNT(*) AS total FROM vote_intents GROUP BY election_id"
+  ).all();
   const flipStats = await env.DB.prepare(
     `SELECT substr(created_at, 1, 10) AS date, COUNT(*) AS count
      FROM tracking_events
@@ -444,6 +508,8 @@ async function adminAnalytics(request, env) {
       totalLogins: await scalar(env, "SELECT COUNT(*) FROM tracking_events WHERE event_type = 'login'"),
       uniqueActiveUsersToday: await scalar(env, "SELECT COUNT(DISTINCT user_id) FROM tracking_events WHERE created_at >= date('now') AND user_id IS NOT NULL")
     },
+    electionId: election,
+    totalsByElection: perElection.results || [],
     votesByIntent: {
       red: byIntent.red || 0,
       blue: byIntent.blue || 0,
@@ -451,7 +517,7 @@ async function adminAnalytics(request, env) {
       undecided: byIntent.undecided || 0,
       total
     },
-    intentChanges: await scalar(env, "SELECT COUNT(*) FROM vote_intent_history WHERE previous_intent IS NOT NULL"),
+    intentChanges: await scalar(env, "SELECT COUNT(*) FROM vote_intent_history WHERE previous_intent IS NOT NULL AND election_id = ?", [election]),
     flipStats: flipStats.results || []
   });
 }
@@ -459,13 +525,13 @@ async function adminAnalytics(request, env) {
 async function exportVotes(request, env) {
   if (!isAdmin(request, env)) return json({ message: "Invalid admin credentials" }, 401);
   const rows = await env.DB.prepare(
-    `SELECT v.id, u.ec_id, u.email, v.intent, v.state, v.age_range, v.city, v.sex,
+    `SELECT v.id, v.election_id, u.ec_id, u.email, v.intent, v.state, v.age_range, v.city, v.sex,
             v.custom_candidate, v.created_at, v.updated_at
      FROM vote_intents v
      JOIN users u ON u.id = v.user_id
-     ORDER BY v.updated_at DESC`
+     ORDER BY v.election_id, v.updated_at DESC`
   ).all();
-  const header = ["id","ec_id","email","intent","state","age_range","city","sex","custom_candidate","created_at","updated_at"];
+  const header = ["id","election_id","ec_id","email","intent","state","age_range","city","sex","custom_candidate","created_at","updated_at"];
   const csv = [header.join(","), ...(rows.results || []).map((row) => header.map((key) => csvCell(row[key])).join(","))].join("\n");
   return new Response(csv, {
     headers: {
@@ -590,21 +656,24 @@ function validAdminSecret(secret, production) {
   return production ? value.length >= MIN_PROD_SECRET_LENGTH : value.length > 0;
 }
 
-async function countsBy(env, field) {
+async function countsBy(env, field, election) {
   const allowed = new Set(["intent", "state", "age_range"]);
   if (!allowed.has(field)) throw new Error("Unsupported count field");
-  const rows = await env.DB.prepare(`SELECT ${field} AS key, COUNT(*) AS count FROM vote_intents GROUP BY ${field}`).all();
+  const rows = await env.DB.prepare(
+    `SELECT ${field} AS key, COUNT(*) AS count FROM vote_intents WHERE election_id = ? GROUP BY ${field}`
+  ).bind(election).all();
   return Object.fromEntries((rows.results || []).map((row) => [row.key || "not_provided", row.count]));
 }
 
-async function segmentedBreakdown(env, field) {
+async function segmentedBreakdown(env, field, election) {
   const allowed = new Set(["state", "age_range"]);
   if (!allowed.has(field)) throw new Error("Unsupported segment field");
   const rows = await env.DB.prepare(
     `SELECT ${field} AS segment, intent, COUNT(*) AS count
      FROM vote_intents
+     WHERE election_id = ?
      GROUP BY ${field}, intent`
-  ).all();
+  ).bind(election).all();
   const out = {};
   for (const row of rows.results || []) {
     const key = row.segment || "not_provided";
@@ -622,6 +691,12 @@ async function segmentedBreakdown(env, field) {
     value.undecidedRange = percentRange(value.undecided || 0, value.total);
   }
   return out;
+}
+
+// Missing election means the default (keeps older clients working); an unknown one returns null.
+function electionFrom(value) {
+  if (value == null || value === "") return DEFAULT_ELECTION;
+  return ELECTIONS.has(value) ? value : null;
 }
 
 async function scalar(env, sql, params = []) {
@@ -659,6 +734,7 @@ function publicUser(row) {
 function publicIntent(row) {
   return {
     id: row.id,
+    electionId: row.election_id,
     intent: row.intent,
     state: row.state,
     ageRange: row.age_range,
@@ -725,6 +801,36 @@ async function sha256(value) {
   return hex(new Uint8Array(digest));
 }
 
+// Returns a 429 Response when `action` is over its limit for this client, else null.
+// `subject` defaults to the client IP. Fails open: a limiter fault must not block real users.
+async function rateLimited(request, env, action, subject) {
+  const rule = RATE_LIMITS[action];
+  try {
+    const who = subject || "ip:" + await rateLimitIp(request, env);
+    const windowMs = rule.windowMinutes * 60 * 1000;
+    const bucket = Math.floor(Date.now() / windowMs) * windowMs;
+    const row = await env.DB.prepare(
+      `INSERT INTO rate_limits (key, bucket, count) VALUES (?, ?, 1)
+       ON CONFLICT(key, bucket) DO UPDATE SET count = count + 1
+       RETURNING count`
+    ).bind(action + ":" + who, bucket).first();
+    if (row && row.count > rule.limit) {
+      const response = json({ message: "Too many requests. Please try again later." }, 429);
+      response.headers.set("Retry-After", String(Math.ceil((bucket + windowMs - Date.now()) / 1000)));
+      return response;
+    }
+  } catch (error) {
+    console.error("rate limiter failed", action, error);
+  }
+  return null;
+}
+
+// Unlike ipHash (stored with events), this ignores the datacenter so one client maps to one key.
+async function rateLimitIp(request, env) {
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  return sha256(String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "") + ":rate-limit:" + ip);
+}
+
 async function ipHash(request, env) {
   const ip = request.headers.get("cf-connecting-ip") || "";
   const secret = String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "");
@@ -788,7 +894,9 @@ function securityHeaders() {
 }
 
 function csvCell(value) {
-  const text = value == null ? "" : String(value);
+  let text = value == null ? "" : String(value);
+  // User-typed fields (city, candidate, email) must not run as formulas in Excel/Sheets.
+  if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

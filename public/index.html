@@ -70,6 +70,19 @@
         var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
         var trackQueue = [];
         var trackFlushTimer = null;
+        // The MutationObserver below fires every second (countdown ticks). Panels that fetch
+        // must load at most once per route, or logged-out visitors poll the API forever.
+        var launchPanelAttempted = {};
+        function attemptLaunchPanel(key) {
+          var routeKey = key + "|" + location.hash;
+          if (launchPanelAttempted[routeKey]) return false;
+          launchPanelAttempted[routeKey] = true;
+          return true;
+        }
+        function resetLaunchPanels() {
+          launchPanelAttempted = {};
+        }
+        window.addEventListener("hashchange", resetLaunchPanels);
 
         function flushTrackingQueue(beacon) {
           if (!trackQueue.length) return;
@@ -124,6 +137,13 @@
                 status: 200,
                 headers: { "content-type": "application/json" }
               }));
+            }
+            if (url && /\/api\/(auth\/)?(login|register|logout|signout)\b/.test(url)) {
+              // Sign-in state changed: let the panels load once more for the new user.
+              return nativeFetch(input, init).then(function(response) {
+                resetLaunchPanels();
+                return response;
+              });
             }
             return nativeFetch(input, init);
           };
@@ -395,6 +415,7 @@
           if (location.hash && location.hash !== "#/" || document.querySelector("[data-launch-home-actions]")) return;
           var main = document.querySelector("main");
           if (!main) return;
+          if (!attemptLaunchPanel("home")) return;
           Promise.all([
             nativeFetch ? nativeFetch("/api/auth/user", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }) : Promise.resolve(null),
             nativeFetch ? nativeFetch("/api/intent", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }) : Promise.resolve(null)
@@ -421,6 +442,7 @@
           if (location.hash !== "#/profile" || document.querySelector("[data-launch-profile-details]")) return;
           var main = document.querySelector("main");
           if (!main) return;
+          if (!attemptLaunchPanel("profile")) return;
           Promise.all([
             nativeFetch ? nativeFetch("/api/account", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }) : Promise.resolve(null),
             nativeFetch ? nativeFetch("/api/intent", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }) : Promise.resolve(null)
@@ -798,6 +820,18 @@
         }
       }
     </style>
+    <script>
+      // The countdown flips on window keydown for every arrow key, which breaks caret movement in
+      // form fields and flips the countdown behind open dialogs. React's own handlers have already
+      // run when the event bubbles to document, so stopping it here only hides it from window.
+      document.addEventListener("keydown", function(event) {
+        if (!/^Arrow/.test(event.key)) return;
+        var target = event.target;
+        if (target && target.closest && target.closest("input, textarea, select, [contenteditable], [role='dialog'], [role='listbox'], [role='menu']")) {
+          event.stopPropagation();
+        }
+      });
+    </script>
     <script type="module" crossorigin src="./assets/index-DMSdeDRP.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-12VABIXr.css">
   </head>

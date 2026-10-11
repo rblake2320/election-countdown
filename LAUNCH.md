@@ -14,9 +14,23 @@ This package is ready for Cloudflare Pages with Functions and D1.
 
 3. Apply the schema:
 
-   ```bash
-   npx wrangler d1 execute election-countdown --file=./schema.sql
-   ```
+   - **New database:** apply `schema.sql` only. It already has the per-election shape, so do not
+     also run `migrations/0001_election_id.sql` (it would fail on the duplicate column).
+
+     ```bash
+     npx wrangler d1 execute election-countdown --remote --file=./schema.sql
+     ```
+
+   - **Existing database (production before Oct 2026):** apply the election migration **before**
+     deploying the Function that reads `election_id`. Until it runs, the new Function returns 503
+     on intent, stats, admin and donor routes; everything else keeps working.
+
+     ```bash
+     npx wrangler d1 migrations apply election-countdown --remote
+     ```
+
+   Vote intents are stored per election (`midterm-2026`, `presidential-2028`). Requests without
+   `?election=` (or `electionId` in the POST body) use `midterm-2026`.
 
 4. Set the admin export secret:
 

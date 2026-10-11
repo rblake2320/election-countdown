@@ -52,3 +52,7 @@ desktop.ini
 
 # AI local-only notes
 CLAUDE.local.md
+
+# Wrangler local dev state and secrets
+.dev.vars
+.wrangler/

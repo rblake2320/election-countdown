@@ -74,6 +74,9 @@ export function DualCountdown() {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Arrow keys belong to the caret / menu when typing or inside a dialog.
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.("input, textarea, select, [contenteditable], [role='dialog'], [role='listbox'], [role='menu']")) return;
       if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
         e.preventDefault();
         flipUp();
