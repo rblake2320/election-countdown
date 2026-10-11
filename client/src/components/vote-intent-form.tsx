@@ -31,6 +31,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Vote, Loader2, Share2, Twitter, Link2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ELECTIONS, type VotableElectionId } from "@/lib/elections";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
 const VOTE_INTENTS = ["red", "blue", "independent", "undecided"] as const;
@@ -70,6 +71,8 @@ interface VoteIntentFormProps {
     customCandidate?: string | null;
   } | null;
   isDonor?: boolean;
+  /** Election this answer is recorded for; the API stores one answer per election. */
+  electionId?: VotableElectionId;
 }
 
 function SharePrompt({ intent, onClose }: { intent: string; onClose: () => void }) {
@@ -137,7 +140,8 @@ function SharePrompt({ intent, onClose }: { intent: string; onClose: () => void 
   );
 }
 
-export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFormProps) {
+export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "midterm-2026" }: VoteIntentFormProps) {
+  const electionTitle = ELECTIONS.find((e) => e.id === electionId)?.title ?? "the election";
   const [open, setOpen] = useState(false);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
   const [submittedIntent, setSubmittedIntent] = useState<string | null>(null);
@@ -163,7 +167,7 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(data),
+          body: JSON.stringify({ ...data, electionId }),
           signal: AbortSignal.timeout(3000),
         });
         if (!response.ok) {
@@ -171,11 +175,8 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
         }
         return response.json();
       } catch {
-        // No backend — save locally
-        try {
-          localStorage.setItem("ec_vote_intent", JSON.stringify(data));
-        } catch {}
-        return data;
+        // Never fake success: a local-only save is invisible to the API and to the user's other devices.
+        throw new Error("Failed to save voting intent");
       }
     },
     onSuccess: (_data, variables) => {
@@ -234,7 +235,8 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">Your Voting Plan</DialogTitle>
           <DialogDescription>
-            Share your voting intention to see how the country leans. Your data is anonymous.
+            For the {electionTitle}. Share your voting intention to see how the country leans.
+            Only combined totals are ever shown publicly.
           </DialogDescription>
         </DialogHeader>
 

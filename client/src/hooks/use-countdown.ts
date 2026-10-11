@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { parseAsEastern } from "@/lib/elections";
 
 interface TimeLeft {
   days: number;
@@ -6,43 +7,6 @@ interface TimeLeft {
   minutes: number;
   seconds: number;
   isExpired: boolean;
-}
-
-/**
- * Parse a date string and interpret it as US Eastern Time.
- * Accepts "2026-11-03T00:00:00" — treats that as midnight ET, not the user's local timezone.
- * Correctly handles EST (UTC-5) vs EDT (UTC-4) based on the target date.
- */
-function parseAsEastern(dateStr: Date | string): Date {
-  if (dateStr instanceof Date) return dateStr;
-
-  try {
-    // Step 1: Treat the string as UTC temporarily to probe the ET offset on that date
-    const asUtc = new Date(dateStr + "Z");
-
-    // Step 2: Use Intl to find the Eastern offset on that particular date
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      timeZoneName: "shortOffset",
-    });
-    const parts = formatter.formatToParts(asUtc);
-    const tzPart = parts.find((p) => p.type === "timeZoneName");
-    // tzPart.value is like "GMT-5" (EST) or "GMT-4" (EDT)
-    const offsetMatch = tzPart?.value?.match(/GMT([+-]\d+)/);
-
-    if (offsetMatch) {
-      const offsetHours = parseInt(offsetMatch[1], 10);
-      // The input "2026-11-03T00:00:00" means midnight Eastern.
-      // Eastern is UTC + offsetHours (e.g., -5), so UTC = local - offset
-      // midnight ET = 00:00 - (-5) = 05:00 UTC
-      const utcMs = asUtc.getTime() - offsetHours * 3600 * 1000;
-      return new Date(utcMs);
-    }
-  } catch {
-    // Fallback: parse as-is (local timezone)
-  }
-
-  return new Date(dateStr);
 }
 
 export function useCountdown(targetDate: Date | string) {
