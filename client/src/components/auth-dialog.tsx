@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useTracking } from "@/hooks/use-tracking";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LogIn, Loader2 } from "lucide-react";
+
+const SIGNIN_ERRORS: Record<string, string> = {
+  cancelled: "Sign-in was cancelled.",
+  invalid_state: "That sign-in link expired. Please try again.",
+  unverified_email: "Your account with that provider has no verified email address. Verify it there, or sign in with email.",
+  token_exchange_failed: "The provider rejected the sign-in. Please try again.",
+  profile_failed: "We couldn't read your profile from the provider. Please try again.",
+  provider_error: "The provider couldn't be reached. Please try again.",
+  not_configured: "That sign-in option isn't available right now.",
+};
+
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z" />
+      <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1z" />
+      <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z" />
+    </svg>
+  );
+}
+
+function GitHubMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
+      <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z" />
+    </svg>
+  );
+}
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -31,6 +61,29 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
   const { track } = useTracking();
 
   const isPending = isLoggingIn || isRegistering;
+
+  // Which social providers the server has credentials for; buttons stay hidden otherwise.
+  const { data: providers } = useQuery<{ google: boolean; github: boolean }>({
+    queryKey: ["/api/auth/providers"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/providers");
+      return res.ok ? res.json() : { google: false, github: false };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const returnTo = "/" + window.location.hash;
+
+  // A failed social sign-in comes back as ?signin_error=<code>: reopen the dialog with the reason.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("signin_error");
+    if (!code) return;
+    setError(SIGNIN_ERRORS[code] || "Sign-in failed. Please try again.");
+    setOpen(true);
+    params.delete("signin_error");
+    const query = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+  }, []);
 
   // Track pointer state to prevent double-fire
   const pointerFiredRef = useRef(false);
@@ -135,6 +188,27 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
                 : "Create an account to participate"}
             </DialogDescription>
           </DialogHeader>
+
+          {(providers?.google || providers?.github) && (
+            <div className="mt-4 grid gap-2" data-testid="social-signin">
+              {providers?.google && (
+                <Button asChild variant="outline" className="w-full gap-2">
+                  <a href={`/api/auth/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`} data-testid="button-signin-google" onClick={() => track("sign_in_click", { method: "google" })}>
+                    <GoogleMark /> Continue with Google
+                  </a>
+                </Button>
+              )}
+              {providers?.github && (
+                <Button asChild variant="outline" className="w-full gap-2">
+                  <a href={`/api/auth/oauth/github/start?returnTo=${encodeURIComponent(returnTo)}`} data-testid="button-signin-github" onClick={() => track("sign_in_click", { method: "github" })}>
+                    <GitHubMark /> Continue with GitHub
+                  </a>
+                </Button>
+              )}
+              <p className="text-center text-xs text-muted-foreground">Signing in with Google or GitHub verifies your email, so your vote counts in the verified totals.</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or with email<span className="h-px flex-1 bg-border" /></div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             {mode === "register" && (

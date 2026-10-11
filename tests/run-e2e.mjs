@@ -30,6 +30,7 @@ const suites = [
   ["election day (open page at 1 AM)", ["tests/e2e/election-day-realtime.mjs", base, "2026-11-04T05:59:50Z", "40000"]],
   ["vote on 2028 card", ["tests/e2e/vote-election.mjs", base]],
   ["anonymous votes", ["tests/e2e/anonymous-votes.mjs", base, "--expect-fixed"]],
+  ["Google + GitHub sign-in (real provider endpoints)", ["tests/e2e/oauth.mjs", base, "--expect-fixed"]],
   ["data exports + rollups + dashboard", ["tests/e2e/data-pipeline.mjs", base, adminSecret, "--expect-fixed"]],
   ["nightly worker -> D1 + R2", ["tests/e2e/nightly-worker.mjs", base, workerBase, adminSecret, persistDir]],
 ];
@@ -57,7 +58,10 @@ async function waitFor(url, okStatus, timeoutMs = 60000) {
 
 // One command string: npx needs a shell on Windows, and Node warns when a shell gets an args array.
 const server = spawn(
-  `npx wrangler pages dev --port ${port} --persist-to "${persistDir}" --binding ADMIN_SECRET=${adminSecret} IP_HASH_SECRET=e2e-ip-secret`,
+  `npx wrangler pages dev --port ${port} --persist-to "${persistDir}" --binding ADMIN_SECRET=${adminSecret} IP_HASH_SECRET=e2e-ip-secret ` +
+    // Placeholder OAuth apps: the real Google/GitHub endpoints reject them, which the oauth suite relies on.
+    `GOOGLE_CLIENT_ID=e2e-placeholder.apps.googleusercontent.com GOOGLE_CLIENT_SECRET=e2e-placeholder ` +
+    `GITHUB_CLIENT_ID=Iv1.e2eplaceholder GITHUB_CLIENT_SECRET=e2e-placeholder`,
   { stdio: "ignore", shell: true }
 );
 // Nightly Worker on the same local D1/R2; offset 0 so it processes today (test data is created today).

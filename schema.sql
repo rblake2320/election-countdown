@@ -129,3 +129,14 @@ CREATE TABLE IF NOT EXISTS daily_rollups (
   computed_at TEXT NOT NULL,
   PRIMARY KEY (day, metric, dimension)
 );
+
+CREATE TABLE IF NOT EXISTS oauth_accounts (
+  provider TEXT NOT NULL,
+  provider_user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  email TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  last_login_at TEXT NOT NULL,
+  PRIMARY KEY (provider, provider_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user ON oauth_accounts(user_id);

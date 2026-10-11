@@ -1,4 +1,8 @@
 import { computeDailyRollup, readRollups, isDay } from "../../lib/analytics.js";
+import {
+  OAUTH_COOKIE, OAuthError, clearOAuthCookie, enabledProviders, fetchVerifiedProfile,
+  providerConfig, readOAuthCookie, safeReturnTo, startAuthorization
+} from "./_oauth.js";
 
 const SESSION_COOKIE = "ec_session";
 const SESSION_DAYS = 30;
@@ -59,6 +63,12 @@ export async function onRequest(context) {
     if ((path === "/auth/user" || path === "/auth/me" || path === "/auth/session" || path === "/me") && request.method === "GET") return json(user);
     if (path === "/auth/register" && request.method === "POST") {
       return (await rateLimited(request, env, "register")) || register(request, env);
+    }
+    if (path === "/auth/providers" && request.method === "GET") return json(enabledProviders(env));
+    const oauthMatch = path.match(/^\/auth\/oauth\/(google|github)\/(start|callback)$/);
+    if (oauthMatch && request.method === "GET") {
+      return (await rateLimited(request, env, "login")) ||
+        (oauthMatch[2] === "start" ? oauthStart(request, env, url, oauthMatch[1]) : oauthCallback(request, env, url, oauthMatch[1]));
     }
     if ((path === "/login" || path === "/auth/login") && request.method === "POST") {
       return (await rateLimited(request, env, "login")) || login(request, env);
@@ -229,6 +239,16 @@ async function ensureSchema(env) {
       count INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (key, bucket)
     )`,
+    `CREATE TABLE IF NOT EXISTS oauth_accounts (
+      provider TEXT NOT NULL,
+      provider_user_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      last_login_at TEXT NOT NULL,
+      PRIMARY KEY (provider, provider_user_id)
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user ON oauth_accounts(user_id)",
     `CREATE TABLE IF NOT EXISTS anon_vote_intents (
       id TEXT PRIMARY KEY,
       visitor_id TEXT NOT NULL,
@@ -314,6 +334,82 @@ async function register(request, env) {
   return withSession(json(user, 200), await createSession(request, env, user.id));
 }
 
+async function oauthStart(request, env, url, name) {
+  const cfg = providerConfig(env, name);
+  if (!cfg) return oauthFail(request, "not_configured");
+  const { location, cookie } = await startAuthorization(cfg, request.url, url.searchParams.get("returnTo"));
+  const response = new Response(null, { status: 302, headers: { ...securityHeaders(), location, "cache-control": "no-store" } });
+  response.headers.append("Set-Cookie", cookie);
+  return response;
+}
+
+// Ends every OAuth attempt with a redirect back into the app, never a raw error page.
+function oauthFail(request, code, returnTo = "/") {
+  const target = new URL(safeReturnTo(returnTo), request.url);
+  target.searchParams.set("signin_error", code);
+  const response = new Response(null, { status: 302, headers: { ...securityHeaders(), location: target.pathname + target.search + target.hash, "cache-control": "no-store" } });
+  response.headers.append("Set-Cookie", clearOAuthCookie(request.url));
+  return response;
+}
+
+async function oauthCallback(request, env, url, name) {
+  const cfg = providerConfig(env, name);
+  if (!cfg) return oauthFail(request, "not_configured");
+  const saved = readOAuthCookie(readCookie(request, OAUTH_COOKIE));
+  const returnTo = saved?.r || "/";
+  if (url.searchParams.get("error")) return oauthFail(request, "cancelled", returnTo);
+  const code = url.searchParams.get("code");
+  if (!saved || saved.p !== name || !code || !timingSafeEqual(url.searchParams.get("state") || "", saved.s)) {
+    return oauthFail(request, "invalid_state", returnTo);
+  }
+
+  let profile;
+  try {
+    profile = await fetchVerifiedProfile(cfg, request.url, code, saved.v);
+  } catch (error) {
+    console.error("oauth", name, error?.message || String(error));
+    return oauthFail(request, error instanceof OAuthError ? error.code : "provider_error", returnTo);
+  }
+
+  const email = normalizeEmail(profile.email);
+  if (!email) return oauthFail(request, "unverified_email", returnTo);
+  const now = new Date().toISOString();
+  const linked = await env.DB.prepare("SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_user_id = ?")
+    .bind(name, profile.providerUserId).first();
+  let userRow = linked ? await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(linked.user_id).first() : null;
+  let created = false;
+  if (!userRow) {
+    // The provider verified this email, so an existing account with it is the same person.
+    userRow = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+  }
+  if (!userRow) {
+    const id = crypto.randomUUID();
+    // No password: password sign-in can never match an empty hash.
+    await env.DB.prepare(
+      `INSERT INTO users (id, ec_id, email, password_hash, password_salt, first_name, last_name,
+        email_verified, verified_at, created_at, updated_at)
+       VALUES (?, ?, ?, '', '', ?, ?, 1, ?, ?, ?)`
+    ).bind(id, ecId(), email, cleanText(profile.firstName, 80), cleanText(profile.lastName, 80), now, now, now).run();
+    userRow = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
+    created = true;
+  } else if (!userRow.email_verified) {
+    await env.DB.prepare("UPDATE users SET email_verified = 1, verified_at = COALESCE(verified_at, ?), updated_at = ? WHERE id = ?")
+      .bind(now, now, userRow.id).run();
+    userRow = { ...userRow, email_verified: 1, verified_at: userRow.verified_at || now };
+  }
+  await env.DB.prepare(
+    `INSERT INTO oauth_accounts (provider, provider_user_id, user_id, email, created_at, last_login_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(provider, provider_user_id) DO UPDATE SET email = excluded.email, last_login_at = excluded.last_login_at`
+  ).bind(name, profile.providerUserId, userRow.id, email, now, now).run();
+
+  const user = publicUser(userRow);
+  await writeEvent(env, request, user, created ? "register" : "login", { method: name });
+  const response = new Response(null, { status: 302, headers: { ...securityHeaders(), location: returnTo, "cache-control": "no-store" } });
+  response.headers.append("Set-Cookie", clearOAuthCookie(request.url));
+  return withSession(response, await createSession(request, env, user.id));
+}
+
 async function login(request, env) {
   const input = await readJson(request);
   const email = normalizeEmail(input.email);
@@ -350,6 +446,7 @@ async function deleteAccount(request, user, env) {
   if (!user) return json({ message: "Sign in required" }, 401);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
+    env.DB.prepare("DELETE FROM oauth_accounts WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM verification_events WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM donations WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM vote_intent_history WHERE user_id = ?").bind(user.id),
