@@ -148,7 +148,9 @@ function health(request, env) {
     database: !!env.DB,
     adminSecret: adminConfigured,
     ipHashSecret: ipHashConfigured,
-    mode: prod ? "production" : "local"
+    mode: prod ? "production" : "local",
+    // "staging" on preview deployments (separate database); the load test refuses anything else.
+    environment: String(env.ENVIRONMENT || "production")
   }, env.DB && adminConfigured && ipHashConfigured ? 200 : 503);
 }
 
@@ -1124,7 +1126,7 @@ async function sha256(value) {
 async function rateLimited(request, env, action, subject) {
   const rule = RATE_LIMITS[action];
   try {
-    const who = subject || "ip:" + await rateLimitIp(request, env);
+    const who = loadTestClient(request, env) || subject || "ip:" + await rateLimitIp(request, env);
     const windowMs = rule.windowMinutes * 60 * 1000;
     const bucket = Math.floor(Date.now() / windowMs) * windowMs;
     const row = await env.DB.prepare(
@@ -1141,6 +1143,17 @@ async function rateLimited(request, env, action, subject) {
     console.error("rate limiter failed", action, error);
   }
   return null;
+}
+
+// Load testing from one machine: when (and only when) LOAD_TEST_SECRET is configured, which is
+// on staging only, a request carrying that secret is rate-limited per virtual client instead of
+// per IP. Limits and their D1 cost still apply; production has no secret, so this is inert there.
+function loadTestClient(request, env) {
+  const secret = String(env.LOAD_TEST_SECRET || "");
+  if (secret.length < 32) return null;
+  if (!timingSafeEqual(request.headers.get("x-load-test-secret") || "", secret)) return null;
+  const client = String(request.headers.get("x-load-test-client") || "").slice(0, 64);
+  return client ? "lt:" + client : null;
 }
 
 async function rateLimitIp(request, env) {
