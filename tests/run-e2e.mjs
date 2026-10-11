@@ -10,7 +10,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const port = Number(process.env.E2E_PORT || 8788);
+const workerPort = port + 1;
 const base = `http://localhost:${port}`;
+const workerBase = `http://localhost:${workerPort}`;
 const adminSecret = "e2e-admin-secret-0123456789abcdef0123456789";
 const persistDir = mkdtempSync(join(tmpdir(), "ec-e2e-"));
 
@@ -28,6 +30,8 @@ const suites = [
   ["election day (open page at 1 AM)", ["tests/e2e/election-day-realtime.mjs", base, "2026-11-04T05:59:50Z", "40000"]],
   ["vote on 2028 card", ["tests/e2e/vote-election.mjs", base]],
   ["anonymous votes", ["tests/e2e/anonymous-votes.mjs", base, "--expect-fixed"]],
+  ["data exports + rollups + dashboard", ["tests/e2e/data-pipeline.mjs", base, adminSecret, "--expect-fixed"]],
+  ["nightly worker -> D1 + R2", ["tests/e2e/nightly-worker.mjs", base, workerBase, adminSecret, persistDir]],
 ];
 
 function run(cmd, args) {
@@ -40,15 +44,15 @@ function run(cmd, args) {
   });
 }
 
-async function waitForHealth(timeoutMs = 60000) {
+async function waitFor(url, okStatus, timeoutMs = 60000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
-      if ((await fetch(base + "/api/health")).status === 200) return;
+      if ((await fetch(url)).status === okStatus) return;
     } catch {}
     await new Promise((r) => setTimeout(r, 500));
   }
-  throw new Error(`wrangler pages dev did not become healthy on ${base}`);
+  throw new Error(`${url} did not answer ${okStatus}`);
 }
 
 // One command string: npx needs a shell on Windows, and Node warns when a shell gets an args array.
@@ -56,10 +60,16 @@ const server = spawn(
   `npx wrangler pages dev --port ${port} --persist-to "${persistDir}" --binding ADMIN_SECRET=${adminSecret} IP_HASH_SECRET=e2e-ip-secret`,
   { stdio: "ignore", shell: true }
 );
+// Nightly Worker on the same local D1/R2; offset 0 so it processes today (test data is created today).
+const worker = spawn(
+  `npx wrangler dev --port ${workerPort} --test-scheduled --persist-to "${persistDir}" --var NIGHTLY_DAY_OFFSET:0`,
+  { stdio: "ignore", shell: true, cwd: "workers/nightly" }
+);
 
 let failed = 0;
 try {
-  await waitForHealth();
+  await waitFor(base + "/api/health", 200);
+  await waitFor(workerBase + "/", 404);
   for (const [name, args] of suites) {
     const started = Date.now();
     const { code, out } = await run("node", args);
@@ -72,8 +82,10 @@ try {
     }
   }
 } finally {
-  if (process.platform === "win32") spawn("taskkill", ["/pid", String(server.pid), "/T", "/F"], { stdio: "ignore" });
-  else server.kill("SIGTERM");
+  for (const child of [server, worker]) {
+    if (process.platform === "win32") spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    else child.kill("SIGTERM");
+  }
   await new Promise((r) => setTimeout(r, 1500));
   try { rmSync(persistDir, { recursive: true, force: true }); } catch {}
 }

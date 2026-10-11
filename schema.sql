@@ -120,3 +120,12 @@ CREATE TABLE IF NOT EXISTS anon_vote_intents (
   UNIQUE (visitor_id, election_id)
 );
 CREATE INDEX IF NOT EXISTS idx_anon_vote_intents_election_intent ON anon_vote_intents(election_id, intent);
+
+CREATE TABLE IF NOT EXISTS daily_rollups (
+  day TEXT NOT NULL,
+  metric TEXT NOT NULL,
+  dimension TEXT NOT NULL,
+  value INTEGER NOT NULL,
+  computed_at TEXT NOT NULL,
+  PRIMARY KEY (day, metric, dimension)
+);

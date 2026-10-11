@@ -82,3 +82,18 @@ This package is ready for Cloudflare Pages with Functions and D1.
 - IP addresses are hashed before storage.
 - Production admin access requires a configured admin secret of at least 32 characters.
 - `privacy.html` and `terms.html` are included and linked from the app shell.
+
+## Nightly analytics job (Worker)
+
+`workers/nightly` is a separate Worker on a cron (06:15 UTC). For the previous UTC day it writes
+`daily_rollups` rows to D1 and gzipped NDJSON dumps (events, a votes snapshot, an anonymous-votes
+snapshot; no emails) plus `manifest.json` to R2 under `daily/YYYY-MM-DD/`.
+
+```bash
+npx wrangler r2 bucket create election-countdown-exports   # once
+npx wrangler d1 migrations apply election-countdown --remote  # creates daily_rollups (0003)
+cd workers/nightly && npx wrangler deploy
+```
+
+Re-run a missed day: deploy with `--var NIGHTLY_DAY_OFFSET:N` (N days back), trigger, redeploy.
+Admins can also recompute any day from the dashboard or `POST /api/admin/rollup?day=YYYY-MM-DD`.
