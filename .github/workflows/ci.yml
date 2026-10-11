@@ -49,4 +49,14 @@ jobs:
         env:
           PUPPETEER_SKIP_DOWNLOAD: "true"
       - run: npx playwright install --with-deps chromium
+      # Fast, visible failure if the local Cloudflare runtime cannot start on the runner.
+      - name: Smoke-start wrangler pages dev
+        run: |
+          npx wrangler --version
+          npx wrangler pages dev --port 8790 --persist-to /tmp/smoke --binding ADMIN_SECRET=smoke-admin-secret-0123456789abcdef0123 IP_HASH_SECRET=smoke > /tmp/smoke.log 2>&1 &
+          for i in $(seq 1 45); do curl -s -o /dev/null -w "%{http_code}" http://localhost:8790/api/health | grep -q 200 && break; sleep 2; done
+          status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8790/api/health || true)
+          echo "health status: $status"; cat /tmp/smoke.log
+          kill %1 || true
+          test "$status" = "200"
       - run: npm run test:e2e
