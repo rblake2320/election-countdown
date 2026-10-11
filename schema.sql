@@ -97,3 +97,10 @@ CREATE INDEX IF NOT EXISTS idx_vote_intents_election_age ON vote_intents(electio
 CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user ON vote_intent_history(user_id, changed_at);
 CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user_election ON vote_intent_history(user_id, election_id, changed_at);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_type_created ON tracking_events(event_type, created_at);
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT NOT NULL,
+  bucket INTEGER NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (key, bucket)
+);

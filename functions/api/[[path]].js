@@ -10,6 +10,14 @@ const INTENTS = new Set(["red", "blue", "independent", "undecided"]);
 const ELECTIONS = new Set(["midterm-2026", "presidential-2028"]);
 const DEFAULT_ELECTION = "midterm-2026";
 let schemaReady = false;
+// Fixed-window limits per client (IP) or per user. Pages on *.pages.dev has no zone WAF,
+// so abuse limits live here.
+const RATE_LIMITS = {
+  register: { limit: 5, windowMinutes: 60 },
+  login: { limit: 20, windowMinutes: 15 },
+  intent: { limit: 30, windowMinutes: 60 },
+  track: { limit: 300, windowMinutes: 10 }
+};
 // True until migrations/0001_election_id.sql has been applied to this database.
 let legacyIntentSchema = false;
 const STATES = new Set([
@@ -39,8 +47,12 @@ export async function onRequest(context) {
 
     if (path === "/health" && request.method === "GET") return health(request, env);
     if ((path === "/auth/user" || path === "/auth/me" || path === "/auth/session" || path === "/me") && request.method === "GET") return json(user);
-    if (path === "/auth/register" && request.method === "POST") return register(request, env);
-    if ((path === "/login" || path === "/auth/login") && request.method === "POST") return login(request, env);
+    if (path === "/auth/register" && request.method === "POST") {
+      return (await rateLimited(request, env, "register")) || register(request, env);
+    }
+    if ((path === "/login" || path === "/auth/login") && request.method === "POST") {
+      return (await rateLimited(request, env, "login")) || login(request, env);
+    }
     if ((path === "/logout" || path === "/auth/logout" || path === "/auth/signout") && request.method === "POST") return csrfProtected(request, () => logout(request, env));
     if (path === "/account" && request.method === "DELETE") return csrfProtected(request, () => deleteAccount(request, user, env));
 
@@ -52,7 +64,10 @@ export async function onRequest(context) {
 
     if (path === "/account" && request.method === "GET") return account(user, env);
     if (path === "/intent" && request.method === "GET") return getIntent(user, env, election);
-    if (path === "/intent" && request.method === "POST") return csrfProtected(request, () => saveIntent(request, user, env, election));
+    if (path === "/intent" && request.method === "POST") {
+      return csrfProtected(request, async () =>
+        (user && await rateLimited(request, env, "intent", "user:" + user.id)) || saveIntent(request, user, env, election));
+    }
     if (path === "/intent/history" && request.method === "GET") return intentHistory(user, env);
     if (path === "/intent/aggregate" && request.method === "GET") return stats(env, election);
     if (path === "/stats" && request.method === "GET") return stats(env, election);
@@ -60,7 +75,9 @@ export async function onRequest(context) {
     if (path === "/donor/analytics" && request.method === "GET") return donorAnalytics(user, env, election);
     if (path === "/admin/analytics" && request.method === "GET") return adminAnalytics(request, env, election);
     if (path === "/admin/export/votes.csv" && request.method === "GET") return exportVotes(request, env);
-    if (path.startsWith("/track/") && request.method === "POST") return track(path.slice(7), request, user, env);
+    if (path.startsWith("/track/") && request.method === "POST") {
+      return (await rateLimited(request, env, "track")) || track(path.slice(7), request, user, env);
+    }
     if (path === "/verify/status" && request.method === "GET") return verifyStatus(user);
     if (path.startsWith("/verify/") && request.method === "POST") return verificationStub(path, user, env);
 
@@ -185,6 +202,12 @@ async function ensureSchema(env) {
       provider_ref TEXT,
       created_at TEXT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT NOT NULL,
+      bucket INTEGER NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (key, bucket)
+    )`,
     "CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)",
     "CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user ON vote_intent_history(user_id, changed_at)",
@@ -207,6 +230,7 @@ async function ensureSchema(env) {
   }
 
   await env.DB.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')").run();
+  await env.DB.prepare("DELETE FROM rate_limits WHERE bucket < ?").bind(Date.now() - 2 * 24 * 60 * 60 * 1000).run();
   // Re-check on the next request until the migration lands, so no isolate stays stuck at 503.
   schemaReady = !legacyIntentSchema;
 }
@@ -773,6 +797,36 @@ async function verifyPassword(password, salt, expected) {
 async function sha256(value) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return hex(new Uint8Array(digest));
+}
+
+// Returns a 429 Response when `action` is over its limit for this client, else null.
+// `subject` defaults to the client IP. Fails open: a limiter fault must not block real users.
+async function rateLimited(request, env, action, subject) {
+  const rule = RATE_LIMITS[action];
+  try {
+    const who = subject || "ip:" + await rateLimitIp(request, env);
+    const windowMs = rule.windowMinutes * 60 * 1000;
+    const bucket = Math.floor(Date.now() / windowMs) * windowMs;
+    const row = await env.DB.prepare(
+      `INSERT INTO rate_limits (key, bucket, count) VALUES (?, ?, 1)
+       ON CONFLICT(key, bucket) DO UPDATE SET count = count + 1
+       RETURNING count`
+    ).bind(action + ":" + who, bucket).first();
+    if (row && row.count > rule.limit) {
+      const response = json({ message: "Too many requests. Please try again later." }, 429);
+      response.headers.set("Retry-After", String(Math.ceil((bucket + windowMs - Date.now()) / 1000)));
+      return response;
+    }
+  } catch (error) {
+    console.error("rate limiter failed", action, error);
+  }
+  return null;
+}
+
+// Unlike ipHash (stored with events), this ignores the datacenter so one client maps to one key.
+async function rateLimitIp(request, env) {
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  return sha256(String(env?.IP_HASH_SECRET || env?.ADMIN_SECRET || "") + ":rate-limit:" + ip);
 }
 
 async function ipHash(request, env) {
