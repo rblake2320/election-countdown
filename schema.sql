@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   verified_at TEXT,
   trust_score INTEGER NOT NULL DEFAULT 0,
   flagged_as_bot INTEGER NOT NULL DEFAULT 0,
+  preferences_json TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

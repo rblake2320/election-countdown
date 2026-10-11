@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Preferences } from "@/lib/themes";
 
 /**
  * Lightweight client-side user shape.
@@ -19,6 +20,7 @@ interface ClientUser {
   verifiedAt?: string | null;
   trustScore: number;
   flaggedAsBot: boolean;
+  preferences?: Preferences;
   createdAt?: string | null;
   updatedAt?: string | null;
 }

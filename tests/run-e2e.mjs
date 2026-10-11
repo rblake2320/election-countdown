@@ -31,6 +31,7 @@ const suites = [
   ["vote on 2028 card", ["tests/e2e/vote-election.mjs", base]],
   ["anonymous votes", ["tests/e2e/anonymous-votes.mjs", base, "--expect-fixed"]],
   ["Google + GitHub sign-in (real provider endpoints)", ["tests/e2e/oauth.mjs", base, "--expect-fixed"]],
+  ["themes for verified accounts", ["tests/e2e/themes.mjs", base, persistDir, "--expect-fixed"]],
   ["data exports + rollups + dashboard", ["tests/e2e/data-pipeline.mjs", base, adminSecret, "--expect-fixed"]],
   ["nightly worker -> D1 + R2", ["tests/e2e/nightly-worker.mjs", base, workerBase, adminSecret, persistDir]],
 ];
