@@ -18,6 +18,7 @@ const suites = [
   ["migration", ["tests/e2e/migration.mjs", "tests/fixtures/schema-pre-election-id.sql", "migrations/0001_election_id.sql"]],
   ["deploy folder", ["tests/e2e/deploy-folder.mjs", base]],
   ["per-election API", ["tests/e2e/api-elections.mjs", base, adminSecret]],
+  ["API hardening", ["tests/e2e/api-hardening.mjs", base, adminSecret, "--expect-fixed"]],
   ["CSV + duplicate register", ["tests/e2e/csv-and-register.mjs", base, adminSecret, "--expect-fixed"]],
   ["rate limits", ["tests/e2e/rate-limits.mjs", base, "--expect-limits"]],
   ["request flood", ["tests/e2e/request-flood.mjs", base]],
