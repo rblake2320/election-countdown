@@ -57,8 +57,8 @@ await p.locator("[data-testid=social-signin]").waitFor();
 out.uiGoogleHref = await p.locator("[data-testid=button-signin-google]").getAttribute("href");
 out.uiGithubHref = await p.locator("[data-testid=button-signin-github]").getAttribute("href");
 await p.goto(base + "/?signin_error=unverified_email#/", { waitUntil: "load" });
-await p.getByRole("dialog").waitFor();
-out.uiErrorShown = /no verified email/i.test(await p.getByRole("dialog").innerText());
+await p.waitForTimeout(1500);
+out.uiErrorShown = /no verified email/i.test(await p.locator("body").innerText());
 out.uiUrlCleaned = !p.url().includes("signin_error");
 await b.close();
 

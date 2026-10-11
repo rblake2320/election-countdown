@@ -70,6 +70,11 @@ await p.waitForTimeout(2000);
 out.uiTally = await p.locator("[data-testid=anonymous-tally]").innerText().catch(() => "");
 out.uiVerified = await p.locator("[data-testid=verified-total]").innerText().catch(() => "");
 out.uiFormHiddenAfterVote = (await p.getByRole("button", { name: /Share Your Vote Plan/i }).count()) === 0;
+// Deletion without an account: "Remove my answers" deletes this browser's plans.
+await p.locator("[data-testid=button-remove-anonymous]").click();
+await p.getByRole("button", { name: /Share Your Vote Plan/i }).waitFor({ timeout: 5000 });
+const browserVisitor = await p.evaluate(() => localStorage.getItem("ec_visitor_id"));
+out.uiRemovedOnServer = (await call("GET", `/api/intent/anonymous?visitorId=${browserVisitor}`)).data === null;
 await b.close();
 
 console.log(JSON.stringify(out));
@@ -88,4 +93,5 @@ assert.match(out.uiTally, /unverified/i);
 assert.notEqual(out.uiTally, tallyBefore, "tally changed after the vote");
 assert.match(out.uiVerified, /verified participant/);
 assert.equal(out.uiFormHiddenAfterVote, true);
+assert.equal(out.uiRemovedOnServer, true, "Remove my answers deletes the server record");
 console.log("ANONYMOUS VOTES TEST PASSED");

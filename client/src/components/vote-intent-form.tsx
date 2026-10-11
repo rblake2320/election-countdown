@@ -437,9 +437,14 @@ export function VoteIntentForm({ existingIntent, isDonor = false, electionId = "
               )}
             />
 
+            {!selectedIntent && (
+              <p className="mt-4 text-center text-xs text-muted-foreground" data-testid="vote-form-hint">
+                Pick a vote choice and a state to submit.
+              </p>
+            )}
             <Button
               type="submit"
-              className="w-full mt-6"
+              className="w-full mt-2"
               disabled={mutation.isPending || !selectedIntent}
             >
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -21,7 +21,8 @@ async function run(label, setup) {
   });
   await page.goto(base + "/", { waitUntil: "load" });
   await page.waitForTimeout(15000);
-  const panels = await page.locator("[data-launch-home-actions]").count();
+  // Signed-in chrome rendered by React (the old inline "Voter Actions" panel is gone).
+  const panels = await page.locator("[data-testid=button-personalize]").count();
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   console.log(`${label}: ${total} API requests in 15s ${JSON.stringify(counts)} | voter-actions panels: ${panels}`);
   await ctx.close();
@@ -40,5 +41,5 @@ await browser.close();
 console.log(JSON.stringify({ anonTotal: anon.total, authedTotal: authed.total, authedPanels: authed.panels }));
 // Before the fix a logged-out visitor made ~68 requests in 15 s; the React app itself needs ~4.
 assert.ok(anon.total <= 10, `logged-out visitor made ${anon.total} API requests in 15 s`);
-assert.equal(authed.panels, 1, "signed-in visitor sees the Voter Actions panel once");
+assert.equal(authed.panels, 1, "signed-in visitor sees the signed-in header once");
 console.log("REQUEST FLOOD TEST PASSED");

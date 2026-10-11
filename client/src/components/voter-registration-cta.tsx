@@ -67,14 +67,34 @@ export function VoterRegistrationCTA() {
     try {
       localStorage.setItem(REGISTERED_KEY, "true");
     } catch {}
-    // Show confirmation briefly, then dismiss
+    // Show confirmation briefly, then settle into the compact "registered · Change" line.
     setTimeout(() => {
       setDismissed(true);
+      setShowConfirmation(false);
     }, 2000);
   };
 
-  // Don't render if previously dismissed
-  if (dismissed && !showConfirmation) return null;
+  const undoRegistered = () => {
+    try {
+      localStorage.removeItem(REGISTERED_KEY);
+    } catch {}
+    track("register_click", { action: "undo_registered" });
+    setDismissed(false);
+    setShowConfirmation(false);
+  };
+
+  // Previously marked as registered: a quiet reminder with a way to undo a mis-click.
+  if (dismissed && !showConfirmation) {
+    return (
+      <p className="text-center text-sm text-muted-foreground" data-testid="registered-status">
+        <CheckCircle2 className="mr-1 inline h-4 w-4 text-green-600" />
+        You're marked as registered on this device.{" "}
+        <button type="button" onClick={undoRegistered} className="font-medium text-primary underline-offset-4 hover:underline" data-testid="button-undo-registered">
+          Change
+        </button>
+      </p>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">

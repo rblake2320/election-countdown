@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { activeElections, ELECTIONS, type Election } from "@/lib/elections";
+import { setCountdown } from "@/lib/tracker";
 import { CountdownTimer } from "./countdown-timer";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
@@ -17,17 +18,6 @@ function useNow(intervalMs: number) {
   return now;
 }
 
-async function trackFlip(fromId: string, toId: string) {
-  try {
-    await fetch("/api/track/flip", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fromYear: fromId, toYear: toId }),
-    });
-  } catch {
-    // Silently ignore tracking errors
-  }
-}
 
 interface DualCountdownProps {
   /** Called with the event currently on screen (also on first render). */
@@ -45,16 +35,19 @@ export function DualCountdown({ onActiveChange }: DualCountdownProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
 
+  // Why the card changed: a user flip, or the clock advancing past an event.
+  const changeReason = useRef<"initial" | "flip" | "advance">("initial");
   useEffect(() => {
     onActiveChange?.(activeElection);
+    setCountdown(activeElection.id, changeReason.current);
+    changeReason.current = "advance";
   }, [activeElection.id, onActiveChange]);
 
   const flipTo = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return;
-    const fromId = elections[activeIndex].id;
     const toId = elections[newIndex].id;
+    changeReason.current = "flip";
     setActiveId(toId);
-    trackFlip(fromId, toId);
   }, [activeIndex, elections]);
 
   const flipUp = useCallback(() => {

@@ -1,40 +1,30 @@
-// Builds client/src with vite and publishes the bundle into public/ (the Pages output dir).
+// Builds the site from client/ and mirrors the result into public/ (the Pages output dir).
 //
-// public/index.html is the served page (it carries meta tags, legal links and inline launch
-// scripts that client/index.html does not), so only its asset references are rewritten.
-// Old hashed bundles are removed so public/assets holds exactly one JS and one CSS file.
+// client/ is the only source: index.html, src/, and client/public/ (privacy/terms pages,
+// _headers, _redirects, images). public/ is generated; never edit it by hand.
+//
+// Guard: the CSP in client/public/_headers has no 'unsafe-inline' for scripts, so the built page
+// must not contain any inline <script>. The build fails instead of shipping a page the CSP blocks.
 //
 // Usage: npm run build:site
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, readdirSync, copyFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 
-const built = "dist/public/assets";
-const published = "public/assets";
-const page = "public/index.html";
+const built = "dist/public";
+const published = "public";
 
 execSync("npx vite build", { stdio: "inherit" });
 
-const assets = readdirSync(built);
-const js = assets.filter((f) => /^index-.*\.js$/.test(f));
-const css = assets.filter((f) => /^index-.*\.css$/.test(f));
-if (js.length !== 1 || css.length !== 1) {
-  throw new Error(`expected one index JS and one CSS in ${built}, found ${assets.join(", ")}`);
+const html = readFileSync(`${built}/index.html`, "utf8");
+const scripts = html.match(/<script\b[^>]*>/g) || [];
+const inline = scripts.filter((tag) => !/\bsrc=/.test(tag));
+if (inline.length) {
+  throw new Error(`index.html has ${inline.length} inline <script> tag(s); the CSP (script-src 'self') would block them`);
+}
+for (const required of ["_headers", "_redirects", "privacy.html", "terms.html", "favicon.png", "opengraph.jpg"]) {
+  if (!existsSync(`${built}/${required}`)) throw new Error(`build output is missing ${required}`);
 }
 
-let html = readFileSync(page, "utf8");
-const jsRefs = html.match(/\.\/assets\/index-[\w-]+\.js/g) || [];
-const cssRefs = html.match(/\.\/assets\/index-[\w-]+\.css/g) || [];
-if (jsRefs.length !== 1 || cssRefs.length !== 1) {
-  throw new Error(`${page} must reference exactly one index JS and CSS (found ${jsRefs.length}, ${cssRefs.length})`);
-}
-html = html.replace(jsRefs[0], `./assets/${js[0]}`).replace(cssRefs[0], `./assets/${css[0]}`);
-
-for (const old of readdirSync(published)) {
-  if (/^index-.*\.(js|css)$/.test(old) && old !== js[0] && old !== css[0]) rmSync(join(published, old));
-}
-copyFileSync(join(built, js[0]), join(published, js[0]));
-copyFileSync(join(built, css[0]), join(published, css[0]));
-writeFileSync(page, html);
-
-console.log(`published ${js[0]} + ${css[0]} -> ${page}`);
+rmSync(published, { recursive: true, force: true });
+cpSync(built, published, { recursive: true });
+console.log(`published ${built} -> ${published} (${scripts.length} external script tag(s), 0 inline)`);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useTracking } from "@/hooks/use-tracking";
@@ -14,15 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { LogIn, Loader2 } from "lucide-react";
 
-const SIGNIN_ERRORS: Record<string, string> = {
-  cancelled: "Sign-in was cancelled.",
-  invalid_state: "That sign-in link expired. Please try again.",
-  unverified_email: "Your account with that provider has no verified email address. Verify it there, or sign in with email.",
-  token_exchange_failed: "The provider rejected the sign-in. Please try again.",
-  profile_failed: "We couldn't read your profile from the provider. Please try again.",
-  provider_error: "The provider couldn't be reached. Please try again.",
-  not_configured: "That sign-in option isn't available right now.",
-};
 
 function GoogleMark() {
   return (
@@ -73,17 +64,6 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
   });
   const returnTo = "/" + window.location.hash;
 
-  // A failed social sign-in comes back as ?signin_error=<code>: reopen the dialog with the reason.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("signin_error");
-    if (!code) return;
-    setError(SIGNIN_ERRORS[code] || "Sign-in failed. Please try again.");
-    setOpen(true);
-    params.delete("signin_error");
-    const query = params.toString();
-    window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
-  }, []);
 
   // Track pointer state to prevent double-fire
   const pointerFiredRef = useRef(false);
@@ -242,7 +222,11 @@ export function AuthDialog({ trigger, defaultMode = "login" }: AuthDialogProps) 
                 id="auth-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  e.currentTarget.setCustomValidity("");
+                  setEmail(e.target.value);
+                }}
+                onInvalid={(e) => e.currentTarget.setCustomValidity("Please enter a valid email address.")}
                 placeholder="you@example.com"
                 required
                 autoComplete="email"

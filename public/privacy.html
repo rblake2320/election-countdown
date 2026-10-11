@@ -20,37 +20,42 @@
     <main>
       <p><a href="./">Back to Election Countdown</a></p>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: May 15, 2026</p>
+      <p class="updated">Last updated: October 11, 2026</p>
       <div class="panel">
-        <p>Election Countdown collects information to operate the countdown experience, account features, vote-intent tools, analytics, and fraud/security protections. Political preference information can be sensitive. Do not submit information you do not want processed by this site.</p>
+        <p>Election Countdown counts down to U.S. elections and lets visitors share how they plan to vote. Political preference is sensitive information: share only what you are comfortable with, and every demographic field is optional.</p>
       </div>
 
       <h2>Information We Collect</h2>
       <ul>
-        <li>Account information such as email address, name, session records, and verification status.</li>
-        <li>Vote-intent information you submit, including support choice, state, optional city, age range, sex, and custom candidate field where available.</li>
-        <li>Change history when you update support, state, or related vote-intent fields.</li>
-        <li>Usage events such as page views, countdown changes, dwell time, visibility changes, heartbeats, CTA clicks, Vote.gov clicks, and share/referral interactions.</li>
-        <li>Technical data such as user agent, referrer, viewport size, timezone, and a hashed IP-derived identifier for security and abuse detection.</li>
+        <li><strong>Account (optional).</strong> Email, name, a password hash (email sign-up) or, if you use Google or GitHub, your provider account id and verified email; sign-in sessions; whether your email is verified; your chosen theme.</li>
+        <li><strong>Vote plans, per election.</strong> For each election (2026 midterms, 2028 presidential) your choice and state, plus optional age range, sex, city and candidate. Signed-in plans are stored with your account, and every change is kept as history.</li>
+        <li><strong>Vote plans without an account.</strong> Choice, state and optional age range and sex, stored with a random visitor id kept in your browser. These are counted separately from account plans and labelled unverified.</li>
+        <li><strong>Usage events.</strong> Page views, which countdown you view and for how long, flips between countdowns, clicks, Vote.gov and share clicks, referrals, tab visibility changes, periodic heartbeats and page exits, each with your visitor id, page, referrer, timezone and screen size.</li>
+        <li><strong>Technical data.</strong> Browser user agent and a keyed hash of your IP address (the IP itself is not stored), used for analytics and to stop abuse such as vote stuffing.</li>
       </ul>
 
       <h2>How We Use Information</h2>
-      <p>We use the information to run the service, save your submitted intent, show your profile, measure countdown engagement, detect abuse, improve the product, and provide admin analytics/export tools.</p>
+      <p>To run the countdown and your profile, record vote plans, show aggregate results, measure how the site is used, prevent abuse (rate limits apply to sign-up, sign-in, voting and analytics), and produce internal analytics and exports for the site operator.</p>
 
-      <h2>Public Results and Segments</h2>
-      <p>Public vote breakdowns remain hidden until the configured participation threshold is met. State and age segment analytics are hidden until each segment has enough records to reduce small-group exposure.</p>
+      <h2>Public Results</h2>
+      <p>Only combined totals are ever shown publicly. The red/blue breakdown stays hidden until 50,000 plans exist for an election, and state and age breakdowns stay hidden until each group has at least 50 records. Plans without an account are reported separately and never mixed into the verified totals.</p>
 
-      <h2>Cookies and Local Storage</h2>
-      <p>The site uses an HttpOnly session cookie for sign-in. It also stores a random visitor identifier in the browser to support analytics. Vote intent and account records are stored by the backend, not browser-only storage.</p>
+      <h2>Cookies and Browser Storage</h2>
+      <p>An HttpOnly session cookie keeps you signed in, and a short-lived cookie protects the Google/GitHub sign-in step. Your browser stores a random visitor id and your &ldquo;already registered&rdquo; choice, nothing else that identifies you.</p>
 
-      <h2>Sharing</h2>
-      <p>Admin export tools can include account and vote-intent data. Do not publish raw exports. We do not sell user data from this launch package.</p>
+      <h2>Storage, Exports and Sharing</h2>
+      <p>Data is stored with Cloudflare (D1 database and R2 storage). A nightly job writes daily summaries and a copy of that day&rsquo;s events and vote plans to private storage; these copies never include email addresses. The operator can export data for analysis; vote-plan exports include email addresses and are handled as confidential. We do not sell personal data.</p>
 
-      <h2>Your Choices</h2>
-      <p>You can avoid submitting optional demographic fields. Signed-in users may request account deletion through the backend account deletion endpoint. Deleted accounts remove account, session, vote-intent, history, verification, donation, and user-linked tracking records.</p>
+      <h2>Your Choices and Deletion</h2>
+      <ul>
+        <li>All demographic fields are optional, and you can vote without an account.</li>
+        <li><strong>Account holders:</strong> My Profile &rarr; <em>Delete my account</em> immediately removes your account, sessions, every vote plan and its history, Google/GitHub links, and the usage events linked to your account.</li>
+        <li><strong>Without an account:</strong> after voting, choose <em>Remove my answers</em> under your plan to delete the plans saved for this browser.</li>
+        <li>Copies already written to the private nightly storage are kept for analysis, without email addresses.</li>
+      </ul>
 
       <h2>Security</h2>
-      <p>The service uses hashed passwords, HttpOnly session cookies, D1-backed server persistence, no-store API responses, and privacy thresholds for public analytics. No system is perfect, so sensitive exports should be tightly controlled.</p>
+      <p>Passwords are stored only as salted PBKDF2 hashes; sessions are HttpOnly, Secure, SameSite cookies stored hashed on the server; all traffic is HTTPS; the site runs under a strict Content Security Policy; and abuse limits protect sign-up, sign-in, voting and analytics. No system is perfect.</p>
 
       <h2>Contact</h2>
       <p>Use the contact path provided by the site owner for deletion, export, or privacy questions.</p>
