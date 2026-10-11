@@ -1,39 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { activeElections, ELECTIONS, type Election } from "@/lib/elections";
 import { CountdownTimer } from "./countdown-timer";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const ELECTIONS = [
-  {
-    id: "midterm-2026",
-    title: "2026 Midterm Elections",
-    subtitle: "Upcoming Election",
-    date: "2026-11-03",
-    time: "00:00",
-    timezone: "America/New_York",
-    year: "2026",
-  },
-  {
-    id: "presidential-2028",
-    title: "2028 Presidential Election",
-    subtitle: "Next Presidential Race",
-    date: "2028-11-07",
-    time: "00:00",
-    timezone: "America/New_York",
-    year: "2028",
-  },
-  {
-    id: "inauguration-2029",
-    title: "2029 Inauguration Day",
-    subtitle: "Presidential Inauguration",
-    date: "2029-01-20",
-    time: "12:00",
-    timezone: "America/New_York",
-    year: "2029",
-  },
-];
+// Re-evaluates which events are still active, so the card list advances on its own
+// (e.g. the midterm card disappears at 1:00 AM ET on Nov 4).
+function useNow(intervalMs: number) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), intervalMs);
+    return () => clearInterval(timer);
+  }, [intervalMs]);
+  return now;
+}
 
 async function trackFlip(fromId: string, toId: string) {
   try {
@@ -47,27 +29,41 @@ async function trackFlip(fromId: string, toId: string) {
   }
 }
 
-export function DualCountdown() {
-  const [activeIndex, setActiveIndex] = useState(0);
+interface DualCountdownProps {
+  /** Called with the event currently on screen (also on first render). */
+  onActiveChange?: (election: Election) => void;
+}
+
+export function DualCountdown({ onActiveChange }: DualCountdownProps = {}) {
+  const now = useNow(30_000);
+  const live = activeElections(now);
+  const elections = live.length ? live : [ELECTIONS[ELECTIONS.length - 1]];
+  const [activeId, setActiveId] = useState(() => elections[0].id);
+  // An event that has passed drops out of the list; fall back to the next one.
+  const activeIndex = Math.max(0, elections.findIndex((e) => e.id === activeId));
+  const activeElection = elections[activeIndex];
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
-  const activeElection = ELECTIONS[activeIndex];
+
+  useEffect(() => {
+    onActiveChange?.(activeElection);
+  }, [activeElection.id, onActiveChange]);
 
   const flipTo = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return;
-    const fromId = ELECTIONS[activeIndex].id;
-    const toId = ELECTIONS[newIndex].id;
-    setActiveIndex(newIndex);
+    const fromId = elections[activeIndex].id;
+    const toId = elections[newIndex].id;
+    setActiveId(toId);
     trackFlip(fromId, toId);
-  }, [activeIndex]);
+  }, [activeIndex, elections]);
 
   const flipUp = useCallback(() => {
-    const newIndex = activeIndex === 0 ? ELECTIONS.length - 1 : activeIndex - 1;
+    const newIndex = activeIndex === 0 ? elections.length - 1 : activeIndex - 1;
     flipTo(newIndex);
   }, [activeIndex, flipTo]);
 
   const flipDown = useCallback(() => {
-    const newIndex = activeIndex === ELECTIONS.length - 1 ? 0 : activeIndex + 1;
+    const newIndex = activeIndex === elections.length - 1 ? 0 : activeIndex + 1;
     flipTo(newIndex);
   }, [activeIndex, flipTo]);
 
@@ -162,9 +158,6 @@ export function DualCountdown() {
     };
   }, [flipUp, flipDown]);
 
-  // Convert to target date
-  const targetDateISO = `${activeElection.date}T${activeElection.time}:00`;
-
   return (
     <div 
       ref={containerRef}
@@ -194,9 +187,11 @@ export function DualCountdown() {
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           <CountdownTimer
-            targetDate={targetDateISO}
+            targetDate={activeElection.start}
             title={activeElection.title}
             subtitle={activeElection.subtitle}
+            todayTitle={activeElection.todayTitle}
+            todayMessage={activeElection.todayMessage}
           />
         </motion.div>
       </AnimatePresence>
@@ -215,7 +210,7 @@ export function DualCountdown() {
       </div>
       {/* Election dots indicator */}
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[-60px] flex gap-2 z-20">
-        {ELECTIONS.map((election, index) => (
+        {elections.map((election, index) => (
           <button
             key={election.id}
             onClick={() => flipTo(index)}

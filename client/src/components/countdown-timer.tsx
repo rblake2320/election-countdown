@@ -6,6 +6,9 @@ interface CountdownTimerProps {
   targetDate: string;
   title: string;
   subtitle?: string;
+  /** Shown once the countdown reaches zero (e.g. on Election Day itself). */
+  todayTitle?: string;
+  todayMessage?: string;
 }
 
 const NumberBox = ({ value, label }: { value: number; label: string }) => {
@@ -33,20 +36,29 @@ const NumberBox = ({ value, label }: { value: number; label: string }) => {
   );
 };
 
-export function CountdownTimer({ targetDate, title, subtitle }: CountdownTimerProps) {
+export function CountdownTimer({ targetDate, title, subtitle, todayTitle, todayMessage }: CountdownTimerProps) {
   const { days, hours, minutes, seconds, isExpired } = useCountdown(targetDate);
 
   if (isExpired) {
     return (
-      <div className="text-center space-y-6">
-        <motion.h1 
+      <div className="text-center space-y-4 px-4" data-testid="election-today">
+        <p className="text-xs md:text-sm font-semibold tracking-widest text-primary/80 uppercase">{title}</p>
+        <motion.h1
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="text-3xl md:text-5xl font-serif font-bold text-primary"
         >
-          {title} is Here!
+          {todayTitle || `${title} is Here!`}
         </motion.h1>
-        <p className="text-muted-foreground text-lg">The countdown has finished.</p>
+        {todayMessage && <p className="text-muted-foreground text-lg max-w-xl mx-auto">{todayMessage}</p>}
+        <a
+          href="https://vote.gov/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block rounded-lg bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Find your polling place
+        </a>
       </div>
     );
   }

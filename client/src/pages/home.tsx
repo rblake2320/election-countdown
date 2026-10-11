@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { nextElection as getNextElection, type Election, type VotableElectionId } from "@/lib/elections";
 import { useQuery } from "@tanstack/react-query";
 import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
@@ -28,6 +29,9 @@ import { useAuth } from "@/hooks/use-auth";
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
   const [quoteHidden, setQuoteHidden] = useState(false);
+  // The election a vote intent is recorded for follows the countdown card on screen.
+  const [votingFor, setVotingFor] = useState<VotableElectionId>(() => getNextElection().votesFor);
+  const handleActiveElection = useCallback((election: Election) => setVotingFor(election.votesFor), []);
   const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const { track } = useTracking();
 
@@ -57,10 +61,10 @@ export default function Home() {
 
   // Fetch user's existing vote intent
   const { data: existingIntent } = useQuery({
-    queryKey: ["/api/intent"],
+    queryKey: ["/api/intent", votingFor],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/intent", {
+        const res = await fetch(`/api/intent?election=${votingFor}`, {
           credentials: "include",
           signal: AbortSignal.timeout(2000),
         });
@@ -91,11 +95,8 @@ export default function Home() {
 
   const toggleTheme = () => {};
 
-  // Next upcoming election for milestone banner
-  const nextElection = useMemo(() => ({
-    date: "2026-11-03T00:00:00",
-    title: "2026 Midterm Elections",
-  }), []);
+  // Next upcoming event for the milestone banner
+  const nextElection = useMemo(() => getNextElection(), []);
 
   // Determine what the user has already completed
   const hasVoteIntent = !!existingIntent?.intent;
@@ -213,14 +214,14 @@ export default function Home() {
 
       {/* ─── Milestone Banner ─── */}
       <div className="px-4 z-10">
-        <MilestoneBanner targetDate={nextElection.date} electionTitle={nextElection.title} />
+        <MilestoneBanner targetDate={nextElection.start} electionTitle={nextElection.title} />
       </div>
 
       {/* ─── Main Content (kept simple) ─── */}
       <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 md:p-8 z-10 pb-20 sm:pb-24">
         {/* Countdown — always visible, the core of the page */}
         <div className="mb-20 sm:mb-24">
-          <DualCountdown />
+          <DualCountdown onActiveChange={handleActiveElection} />
         </div>
 
         {/* Aggregate bar — always visible */}
@@ -244,7 +245,7 @@ export default function Home() {
         */}
         {isAuthenticated && !hasVoteIntent && (
           <div className="mb-8 sm:mb-12">
-            <VoteIntentForm existingIntent={existingIntent} />
+            <VoteIntentForm existingIntent={existingIntent} electionId={votingFor} />
           </div>
         )}
 
