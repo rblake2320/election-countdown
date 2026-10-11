@@ -171,11 +171,8 @@ export function VoteIntentForm({ existingIntent, isDonor = false }: VoteIntentFo
         }
         return response.json();
       } catch {
-        // No backend — save locally
-        try {
-          localStorage.setItem("ec_vote_intent", JSON.stringify(data));
-        } catch {}
-        return data;
+        // Never fake success: a local-only save is invisible to the API and to the user's other devices.
+        throw new Error("Failed to save voting intent");
       }
     },
     onSuccess: (_data, variables) => {

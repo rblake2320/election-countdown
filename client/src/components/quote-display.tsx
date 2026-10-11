@@ -101,7 +101,7 @@ export function QuoteDisplay({
       setCurrentQuote(relevantQuotes[randomIndex]);
     }
     onShow();
-    onPreferenceChange?.(null);
+    onPreferenceChange?.("random");
   };
 
   if (isHidden) {

@@ -68,46 +68,28 @@ export default function Home() {
         if (!res.ok) throw new Error("Failed to fetch intent");
         return res.json();
       } catch {
-        // No backend — check localStorage
-        try {
-          const local = localStorage.getItem("ec_vote_intent");
-          return local ? JSON.parse(local) : null;
-        } catch {
-          return null;
-        }
+        return null;
       }
     },
     enabled: isAuthenticated,
   });
 
-  // Dark mode persistence
+  // Dark mode is disabled for launch: always light, and clear any saved preference.
   useEffect(() => {
+    document.documentElement.classList.remove("dark");
     try {
-      const saved = localStorage.getItem("theme");
-      if (saved === "dark") {
-        setIsDark(true);
-        document.documentElement.classList.add("dark");
-      }
-    } catch {
-      // localStorage blocked
-    }
+      localStorage.removeItem("theme");
+    } catch {}
   }, []);
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    document.documentElement.classList.remove("dark");
     try {
-      localStorage.setItem("theme", isDark ? "dark" : "light");
+      localStorage.removeItem("theme");
     } catch {}
   }, [isDark]);
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    track("theme_toggle", { to: !isDark ? "dark" : "light" });
-  };
+  const toggleTheme = () => {};
 
   // Next upcoming election for milestone banner
   const nextElection = useMemo(() => ({
