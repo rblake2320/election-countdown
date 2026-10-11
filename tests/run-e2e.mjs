@@ -82,10 +82,8 @@ try {
     await waitFor(workerBase + "/", 404, 120000);
   } catch (error) {
     for (const [name, file] of [["site", siteLog], ["worker", workerLog]]) {
-      console.log(`--- ${name} server log ---
-` + readFileSync(file, "utf8").split("
-").slice(-40).join("
-"));
+      const tail = readFileSync(file, "utf8").split("\n").slice(-40).join("\n");
+      console.log(`--- ${name} server log ---\n${tail}`);
     }
     throw error;
   }
