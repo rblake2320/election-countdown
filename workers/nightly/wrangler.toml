@@ -1,0 +1,19 @@
+# Nightly analytics job for election-countdown (separate from the Pages project).
+# Deploy: cd workers/nightly && npx wrangler deploy
+name = "election-countdown-nightly"
+main = "src/index.js"
+compatibility_date = "2026-05-14"
+workers_dev = false
+
+# 06:15 UTC = 1:15 AM EST / 2:15 AM EDT, after the US day ends.
+[triggers]
+crons = ["15 6 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "election-countdown"
+database_id = "47185562-ab95-41e9-a184-418ec3b0c1d0"
+
+[[r2_buckets]]
+binding = "EXPORTS"
+bucket_name = "election-countdown-exports"

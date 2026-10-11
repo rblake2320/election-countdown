@@ -1,3 +1,5 @@
+import { computeDailyRollup, readRollups, isDay } from "../../lib/analytics.js";
+
 const SESSION_COOKIE = "ec_session";
 const SESSION_DAYS = 30;
 const MIN_PUBLIC_BREAKDOWN = 50000;
@@ -88,7 +90,10 @@ export async function onRequest(context) {
     if (path === "/donations" && request.method === "GET") return donations(user, env);
     if (path === "/donor/analytics" && request.method === "GET") return donorAnalytics(user, env, election);
     if (path === "/admin/analytics" && request.method === "GET") return adminAnalytics(request, env, election);
-    if (path === "/admin/export/votes.csv" && request.method === "GET") return exportVotes(request, env);
+    const exportMatch = path.match(/^\/admin\/export\/(votes|anon-votes|events)\.(csv|json)$/);
+    if (exportMatch && request.method === "GET") return exportData(request, env, url, exportMatch[1], exportMatch[2]);
+    if (path === "/admin/rollups" && request.method === "GET") return adminRollups(request, env, url);
+    if (path === "/admin/rollup" && request.method === "POST") return adminComputeRollup(request, env, url);
     if (path.startsWith("/track/") && request.method === "POST") {
       return (await rateLimited(request, env, "track")) || track(path.slice(7), request, user, env);
     }
@@ -637,24 +642,79 @@ async function adminAnalytics(request, env, election) {
   });
 }
 
-async function exportVotes(request, env) {
+const MAX_EXPORT_ROWS = 50000;
+
+// Admin exports. Filters (all optional): election, from/to (ISO date or datetime, on created_at),
+// state, intent (votes), type (events). Votes include email; the nightly R2 dump does not.
+const EXPORTS = {
+  votes: {
+    select: `SELECT v.id, v.election_id, u.ec_id, u.email, v.intent, v.state, v.age_range, v.city, v.sex,
+             v.custom_candidate, v.created_at, v.updated_at FROM vote_intents v JOIN users u ON u.id = v.user_id`,
+    alias: "v.",
+    columns: ["id","election_id","ec_id","email","intent","state","age_range","city","sex","custom_candidate","created_at","updated_at"],
+    filters: { election: "election_id", state: "state", intent: "intent" }
+  },
+  "anon-votes": {
+    select: "SELECT id, visitor_id, election_id, intent, state, age_range, sex, ip_hash, created_at, updated_at FROM anon_vote_intents",
+    alias: "",
+    columns: ["id","visitor_id","election_id","intent","state","age_range","sex","ip_hash","created_at","updated_at"],
+    filters: { election: "election_id", state: "state", intent: "intent" }
+  },
+  events: {
+    select: "SELECT id, event_type, user_id, payload_json, path, referrer, ip_hash, created_at FROM tracking_events",
+    alias: "",
+    columns: ["id","event_type","user_id","payload_json","path","referrer","ip_hash","created_at"],
+    filters: { type: "event_type" },
+    electionExpr: "COALESCE(json_extract(payload_json, '$.electionId'), json_extract(payload_json, '$.toYear'))"
+  }
+};
+
+async function exportData(request, env, url, dataset, format) {
   if (!isAdmin(request, env)) return json({ message: "Invalid admin credentials" }, 401);
-  const rows = await env.DB.prepare(
-    `SELECT v.id, v.election_id, u.ec_id, u.email, v.intent, v.state, v.age_range, v.city, v.sex,
-            v.custom_candidate, v.created_at, v.updated_at
-     FROM vote_intents v
-     JOIN users u ON u.id = v.user_id
-     ORDER BY v.election_id, v.updated_at DESC`
-  ).all();
-  const header = ["id","election_id","ec_id","email","intent","state","age_range","city","sex","custom_candidate","created_at","updated_at"];
-  const csv = [header.join(","), ...(rows.results || []).map((row) => header.map((key) => csvCell(row[key])).join(","))].join("\n");
-  return new Response(csv, {
-    headers: {
-      ...securityHeaders(),
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=votes_export.csv"
-    }
-  });
+  const spec = EXPORTS[dataset];
+  const where = [];
+  const params = [];
+  for (const [param, column] of Object.entries(spec.filters)) {
+    const value = url.searchParams.get(param);
+    if (value) { where.push(`${spec.alias}${column} = ?`); params.push(value); }
+  }
+  const election = url.searchParams.get("election");
+  if (election && spec.electionExpr) { where.push(`${spec.electionExpr} = ?`); params.push(election); }
+  for (const [param, op] of [["from", ">="], ["to", "<"]]) {
+    const value = url.searchParams.get(param);
+    if (!value) continue;
+    const parsed = Date.parse(value);
+    if (Number.isNaN(parsed)) return json({ message: `Invalid ${param}` }, 400);
+    where.push(`${spec.alias}created_at ${op} ?`);
+    params.push(new Date(parsed).toISOString());
+  }
+  const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || MAX_EXPORT_ROWS, 1), MAX_EXPORT_ROWS);
+  const sql = `${spec.select}${where.length ? " WHERE " + where.join(" AND ") : ""} ORDER BY ${spec.alias}created_at DESC LIMIT ${limit}`;
+  const rows = (await env.DB.prepare(sql).bind(...params).all()).results || [];
+  const filename = `${dataset}_${new Date().toISOString().slice(0, 10)}.${format}`;
+  const headers = { ...securityHeaders(), "cache-control": "no-store", "content-disposition": `attachment; filename=${filename}` };
+  if (format === "json") {
+    return new Response(JSON.stringify({ dataset, count: rows.length, limit, rows }), { headers: { ...headers, "content-type": "application/json; charset=utf-8" } });
+  }
+  const csv = [spec.columns.join(","), ...rows.map((row) => spec.columns.map((key) => csvCell(row[key])).join(","))].join("\n");
+  return new Response(csv, { headers: { ...headers, "content-type": "text/csv; charset=utf-8" } });
+}
+
+async function adminRollups(request, env, url) {
+  if (!isAdmin(request, env)) return json({ message: "Invalid admin credentials" }, 401);
+  const to = url.searchParams.get("to") || new Date().toISOString().slice(0, 10);
+  const from = url.searchParams.get("from") || new Date(Date.parse(to) - 29 * 86400000).toISOString().slice(0, 10);
+  if (!isDay(from) || !isDay(to)) return json({ message: "from/to must be YYYY-MM-DD" }, 400);
+  return json({ from, to, rows: await readRollups(env.DB, from, to, url.searchParams.get("metric")) });
+}
+
+// Recompute one day on demand (the nightly Worker does yesterday automatically).
+async function adminComputeRollup(request, env, url) {
+  if (!isAdmin(request, env)) return json({ message: "Invalid admin credentials" }, 401);
+  const day = url.searchParams.get("day") || new Date().toISOString().slice(0, 10);
+  if (!isDay(day)) return json({ message: "day must be YYYY-MM-DD" }, 400);
+  const rows = await computeDailyRollup(env.DB, day);
+  return json({ day, rows });
 }
 
 async function track(type, request, user, env) {

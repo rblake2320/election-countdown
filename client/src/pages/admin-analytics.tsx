@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AdminDataPanel } from "@/components/admin-data-panel";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,7 @@ interface AdminAnalyticsData {
   sessionStats: {
     totalLogins: number;
     uniqueActiveUsersToday: number;
-    avgSessionDurationSeconds: number;
+    avgSessionDurationSeconds?: number;
   };
   flipStats: { date: string; count: number }[];
   donationStats: {
@@ -57,7 +58,9 @@ function StatCard({ icon: Icon, label, value, testId }: StatCardProps) {
   );
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | undefined): string {
+  // The API does not report session duration yet; never render NaN.
+  if (typeof seconds !== "number" || !Number.isFinite(seconds)) return "—";
   if (seconds < 60) return `${seconds}s`;
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -68,7 +71,6 @@ export default function AdminAnalytics() {
   const [, navigate] = useLocation();
   const [adminSecret, setAdminSecret] = useState("");
   const [enteredSecret, setEnteredSecret] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const { data, isLoading, error } = useQuery<AdminAnalyticsData>({
     queryKey: ["/api/admin/analytics", enteredSecret],
@@ -85,29 +87,6 @@ export default function AdminAnalytics() {
     retry: false,
   });
 
-  const handleDownloadCSV = async () => {
-    setIsDownloading(true);
-    try {
-      const res = await fetch("/api/admin/export/votes.csv", {
-        headers: { "x-admin-secret": enteredSecret },
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to download");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "votes_export.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      // ignore
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -224,26 +203,8 @@ export default function AdminAnalytics() {
               </Card>
             )}
 
-            {/* CSV Export */}
-            <section>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Data Export
-              </h2>
-              <Button
-                variant="outline"
-                onClick={handleDownloadCSV}
-                disabled={isDownloading}
-                className="gap-2"
-                data-testid="button-export-csv"
-              >
-                <Download className="h-4 w-4" />
-                {isDownloading ? "Downloading..." : "Export Votes as CSV"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-1">
-                Downloads all vote intent records with demographics.
-              </p>
-            </section>
+            {/* Trends, event breakdown and filtered exports */}
+            <AdminDataPanel secret={enteredSecret} />
           </div>
         ) : null}
       </div>
