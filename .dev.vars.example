@@ -1,0 +1,12 @@
+# Local secrets for `wrangler pages dev` (copy to .dev.vars; never commit .dev.vars).
+# Production values are Pages secrets: npx wrangler pages secret put <NAME>
+
+# Required
+ADMIN_SECRET=local-admin-secret-at-least-32-characters-long
+IP_HASH_SECRET=local-ip-hash-secret
+
+# Optional: Google / GitHub sign-in (each provider turns on when both values are set)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=

@@ -1,6 +1,6 @@
 # Election Countdown
 
-Live countdown to the 2026 Midterms and 2028 Presidential Election, with voter registration links.
+Live countdown to the 2026 Midterms and 2028 Presidential Election: voter registration links, per-election vote plans (with or without an account), Google/GitHub sign-in, themes for verified accounts, and an admin analytics dashboard with exports and a nightly data pipeline.
 
 ## Screenshots
 
@@ -20,10 +20,11 @@ Live countdown to the 2026 Midterms and 2028 Presidential Election, with voter r
 
 ```bash
 npm ci
-npm run dev:client   # http://localhost:5000
+cp .dev.vars.example .dev.vars
+npm run dev:full     # site + API + local database on http://localhost:8788
 ```
 
-See [SETUP.md](SETUP.md) for the full stack (database, Stripe).
+See [SETUP.md](SETUP.md) for running the full stack locally (API + D1 included).
 
 ## Build and deploy
 
