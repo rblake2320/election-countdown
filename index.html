@@ -798,6 +798,18 @@
         }
       }
     </style>
+    <script>
+      // The countdown flips on window keydown for every arrow key, which breaks caret movement in
+      // form fields and flips the countdown behind open dialogs. React's own handlers have already
+      // run when the event bubbles to document, so stopping it here only hides it from window.
+      document.addEventListener("keydown", function(event) {
+        if (!/^Arrow/.test(event.key)) return;
+        var target = event.target;
+        if (target && target.closest && target.closest("input, textarea, select, [contenteditable], [role='dialog'], [role='listbox'], [role='menu']")) {
+          event.stopPropagation();
+        }
+      });
+    </script>
     <script type="module" crossorigin src="./assets/index-DMSdeDRP.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-12VABIXr.css">
   </head>
