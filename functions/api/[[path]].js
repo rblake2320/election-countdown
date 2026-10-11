@@ -191,7 +191,9 @@ async function register(request, env) {
   }
 
   const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
-  if (existing) return json({ message: "If this email is available, your account has been created. Check your inbox." }, 200);
+  // 200 with no user made the client treat the message object as a signed-in user.
+  // No email is ever sent, so the old "check your inbox" text was also untrue.
+  if (existing) return json({ message: "An account with this email already exists. Sign in instead." }, 409);
 
   const now = new Date().toISOString();
   const salt = randomToken(24);
@@ -788,7 +790,9 @@ function securityHeaders() {
 }
 
 function csvCell(value) {
-  const text = value == null ? "" : String(value);
+  let text = value == null ? "" : String(value);
+  // User-typed fields (city, candidate, email) must not run as formulas in Excel/Sheets.
+  if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
