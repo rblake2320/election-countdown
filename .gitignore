@@ -3,6 +3,7 @@
 .env.*
 .env.local
 !.env.example
+!.dev.vars.example
 
 # Python
 __pycache__/

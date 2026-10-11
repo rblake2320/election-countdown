@@ -1,116 +1,56 @@
-# Election Countdown — Setup Guide
+# Election Countdown — Local Setup
+
+Everything runs on Cloudflare: a static React site (`public/`, built from `client/`), one Pages
+Function for the API (`functions/api/[[path]].js`), a D1 database, and a nightly Worker
+(`workers/nightly`) that writes rollups to D1 and exports to R2. There is no other server.
 
 ## Prerequisites
 
-1. **Node.js 20+**
-2. **PostgreSQL** database
-3. **Stripe Account** (for donations)
+- Node.js 20+ (22 used in CI)
+- `npx wrangler` (pulled on demand; logs in with `npx wrangler login` for deploys only)
 
-## Initial Setup
-
-### 1. Clone and Install
+## Run it
 
 ```bash
-git clone https://github.com/rblake2320/election-countdown.git
-cd election-countdown
-npm install
+npm ci
+cp .dev.vars.example .dev.vars          # local secrets, never committed
+npm run dev:full                        # build the site + API + local D1 on http://localhost:8788
 ```
 
-### 2. Configure Environment Variables
+`npm run dev` serves only the React UI with hot reload (http://localhost:5000); API calls need
+`dev:full` (or `wrangler pages dev` running alongside).
+
+The local D1 database is created on first request; nothing to install.
+
+## Build
 
 ```bash
-cp .env.example .env
+npm run build      # vite build of client/ mirrored into public/ (fails on any inline <script>)
+npm run check      # TypeScript
 ```
 
-Edit `.env` with your values:
+`public/` is generated. Edit `client/` (source, `client/index.html`, `client/public/` for
+privacy/terms, `_headers`, `_redirects` and images), then rebuild.
 
-- `DATABASE_URL` — PostgreSQL connection string
-- `SESSION_SECRET` — Random secret for session encryption
-- `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` — From [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
-- `STRIPE_WEBHOOK_SECRET` — From Stripe webhook settings
-- `ADMIN_SECRET` — Secret for admin analytics endpoints
-
-### 3. Push Database Schema
+## Test
 
 ```bash
-npm run db:push
+npx playwright install chromium   # once
+npm run test:e2e                   # ~3 min, starts its own wrangler servers with an empty database
 ```
 
-### 4. Seed Stripe Products (first time only)
+## Deploy
 
-```bash
-npm run seed:stripe
-```
+See [LAUNCH.md](LAUNCH.md): apply D1 migrations first, then deploy the nightly Worker and Pages.
 
-**Expected Output:**
-```
-Creating donation product...
-Created product: prod_xxxxx
-Created price: price_xxxxx - $5 Donation
-Created price: price_xxxxx - $10 Donation
-Created price: price_xxxxx - $25 Donation
-Created price: price_xxxxx - $50 Donation
-Created price: price_xxxxx - $100 Donation
-Donation products seeded successfully!
-```
+## Layout
 
-### 5. Optional: Configure Cloudflare Turnstile
-
-For bot protection, add your Turnstile secret key to `.env`:
-```
-TURNSTILE_SECRET_KEY=your-turnstile-secret
-```
-
-If not configured, bot protection will be skipped.
-
-## Running the Application
-
-### Development
-
-```bash
-npm run dev
-```
-
-App available at http://localhost:5000
-
-### Production
-
-```bash
-npm run build
-npm start
-```
-
-## Authentication
-
-This app uses email/password authentication (passport-local). Users register and sign in through the in-app dialog. Sessions are stored in PostgreSQL.
-
-## Features
-
-- **Dual Countdown** — Navigate with arrow keys, mouse wheel, touch swipe, or button clicks between 2026 Midterm and 2028 Presidential elections
-- **Vote Intent** — Submit voting intention with state (required), age range, city, sex (optional). Rate limited to 5/hour/IP
-- **Donations** — Stripe Checkout with preset tiers ($5–$100). Donors get analytics access and custom candidate field
-- **Aggregate Stats** — Hidden until 50K participants for privacy
-- **Admin Analytics** — Protected by admin secret header
-
-## Architecture
-
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Framer Motion
-- **Backend:** Node.js, Express 5, TypeScript (ESM)
-- **Database:** PostgreSQL with Drizzle ORM
-- **Auth:** passport-local (email/password), sessions in PostgreSQL
-- **Payments:** Stripe Checkout + webhooks
-- **Bot Protection:** Cloudflare Turnstile (optional)
-- **Rate Limiting:** express-rate-limit
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `SESSION_SECRET` | Yes | Session encryption secret |
-| `STRIPE_SECRET_KEY` | Yes | Stripe secret API key |
-| `STRIPE_PUBLISHABLE_KEY` | Yes | Stripe publishable API key |
-| `STRIPE_WEBHOOK_SECRET` | Yes | Stripe webhook signing secret |
-| `ADMIN_SECRET` | No | Admin analytics access secret |
-| `TURNSTILE_SECRET_KEY` | No | Cloudflare Turnstile bot protection |
-| `PORT` | No | Server port (default: 5000) |
+| Path | What it is |
+|---|---|
+| `client/` | React app (Vite). `client/public/` is copied verbatim into the build. |
+| `functions/api/[[path]].js` | The whole API (auth, OAuth, votes, stats, tracking, admin). |
+| `lib/` | Plain JS shared by the API and the Worker (`analytics.js`, `oauth.js`). |
+| `workers/nightly/` | Cron Worker: daily rollups → D1, NDJSON dumps → R2. |
+| `migrations/` | D1 migrations (`wrangler d1 migrations apply`). `schema.sql` is the full current schema for a brand-new database. |
+| `tests/` | End-to-end suite (`npm run test:e2e`). |
+| `public/` | Build output deployed by Pages (do not edit). |
