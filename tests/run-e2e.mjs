@@ -5,7 +5,7 @@
 // First time only: `npx playwright install chromium`.
 // Never points at production: every test refuses *.pages.dev URLs.
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, openSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -15,6 +15,10 @@ const base = `http://localhost:${port}`;
 const workerBase = `http://localhost:${workerPort}`;
 const adminSecret = "e2e-admin-secret-0123456789abcdef0123456789";
 const persistDir = mkdtempSync(join(tmpdir(), "ec-e2e-"));
+// Server output goes to log files so a failed start can be diagnosed (printed below on failure).
+const logDir = mkdtempSync(join(tmpdir(), "ec-e2e-logs-"));
+const siteLog = join(logDir, "site.log");
+const workerLog = join(logDir, "worker.log");
 
 const suites = [
   ["migration", ["tests/e2e/migration.mjs", "tests/fixtures/schema-pre-election-id.sql", "migrations/0001_election_id.sql"]],
@@ -63,18 +67,28 @@ const server = spawn(
     // Placeholder OAuth apps: the real Google/GitHub endpoints reject them, which the oauth suite relies on.
     `GOOGLE_CLIENT_ID=e2e-placeholder.apps.googleusercontent.com GOOGLE_CLIENT_SECRET=e2e-placeholder ` +
     `GITHUB_CLIENT_ID=Iv1.e2eplaceholder GITHUB_CLIENT_SECRET=e2e-placeholder`,
-  { stdio: "ignore", shell: true }
+  { stdio: ["ignore", openSync(siteLog, "w"), openSync(siteLog, "a")], shell: true }
 );
 // Nightly Worker on the same local D1/R2; offset 0 so it processes today (test data is created today).
 const worker = spawn(
   `npx wrangler dev --port ${workerPort} --test-scheduled --persist-to "${persistDir}" --var NIGHTLY_DAY_OFFSET:0`,
-  { stdio: "ignore", shell: true, cwd: "workers/nightly" }
+  { stdio: ["ignore", openSync(workerLog, "w"), openSync(workerLog, "a")], shell: true, cwd: "workers/nightly" }
 );
 
 let failed = 0;
 try {
-  await waitFor(base + "/api/health", 200);
-  await waitFor(workerBase + "/", 404);
+  try {
+    await waitFor(base + "/api/health", 200, 120000);
+    await waitFor(workerBase + "/", 404, 120000);
+  } catch (error) {
+    for (const [name, file] of [["site", siteLog], ["worker", workerLog]]) {
+      console.log(`--- ${name} server log ---
+` + readFileSync(file, "utf8").split("
+").slice(-40).join("
+"));
+    }
+    throw error;
+  }
   for (const [name, args] of suites) {
     const started = Date.now();
     const { code, out } = await run("node", args);
