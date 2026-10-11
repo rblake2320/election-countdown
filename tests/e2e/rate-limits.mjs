@@ -21,6 +21,9 @@ const out = {};
 const regs = [];
 for (let i = 0; i < 6; i++) regs.push(await post("/api/auth/register", { email: `rl-${run}-${i}@example.com`, password: "correct-horse-1" }, { "cf-connecting-ip": "203.0.113.10" }));
 out.register = statuses(regs);
+// Load-test headers are inert unless LOAD_TEST_SECRET is configured (staging only).
+out.registerWithFakeLoadHeaders = (await post("/api/auth/register", { email: `rl-${run}-lt@example.com`, password: "correct-horse-1" },
+  { "cf-connecting-ip": "203.0.113.10", "x-load-test-secret": "x".repeat(40), "x-load-test-client": "vu-1" })).status;
 const otherIp = await post("/api/auth/register", { email: `rl-${run}-other@example.com`, password: "correct-horse-1" }, { "cf-connecting-ip": "203.0.113.99" });
 out.registerOtherIp = otherIp.status;
 
@@ -46,6 +49,7 @@ out.track301st = tracks[300];
 console.log(JSON.stringify(out));
 if (expectLimits) {
   assert.deepEqual(out.register, [200, 200, 200, 200, 200, 429], "6th register from one IP is limited");
+  assert.equal(out.registerWithFakeLoadHeaders, 429, "load-test headers cannot bypass limits without the staging secret");
   assert.equal(regs[5].headers.get("retry-after") > 0, true, "Retry-After set");
   assert.equal(out.registerOtherIp, 200, "a different IP is not affected");
   assert.equal(out.intentFirst30AllOk, true);

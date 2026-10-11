@@ -1,0 +1,81 @@
+{
+  "target": "https://staging.election-countdown-38g.pages.dev",
+  "vus": 1000,
+  "rampS": 60,
+  "holdS": 120,
+  "durationS": 190,
+  "requests": 27349,
+  "avgRps": 144,
+  "errorRate": 0,
+  "latencyMs": {
+    "page": {
+      "n": 2000,
+      "p50": 104,
+      "p95": 173,
+      "p99": 272,
+      "max": 617
+    },
+    "read": {
+      "n": 7930,
+      "p50": 169,
+      "p95": 330,
+      "p99": 482,
+      "max": 868
+    },
+    "write": {
+      "n": 17419,
+      "p50": 213,
+      "p95": 403,
+      "p99": 543,
+      "max": 1639
+    }
+  },
+  "p99AnyMs": 523,
+  "statuses": {
+    "html 200": 1000,
+    "bundle 200": 1000,
+    "auth_user 200": 1000,
+    "providers 200": 1000,
+    "anon_get 200": 1000,
+    "stats 200": 4930,
+    "anon_vote 200": 100,
+    "register 200": 30,
+    "account_vote 200": 30,
+    "track_batch 200": 17259
+  },
+  "integrity": {
+    "accountVotes": {
+      "submitted": 30,
+      "stored": 30
+    },
+    "anonymousVotes": {
+      "submitted": 100,
+      "stored": 100
+    },
+    "events": {
+      "expected": 69196,
+      "stored": 69196
+    }
+  },
+  "slo": {
+    "errorRate": 0.005,
+    "p95": {
+      "page": 300,
+      "read": 500,
+      "write": 800
+    },
+    "p99Any": 1500
+  },
+  "checks": {
+    "errorRate": true,
+    "p95Page": true,
+    "p95Read": true,
+    "p95Write": true,
+    "p99Any": true,
+    "accountVotesIntact": true,
+    "anonymousVotesIntact": true,
+    "eventsIntact": true
+  },
+  "sampleFailures": [],
+  "pass": true
+}
