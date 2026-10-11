@@ -34,7 +34,7 @@ export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
   };
 
   const handleShare = async (platform: string) => {
-    const referralCode = await trackShareAction(platform, "general", shareUrl);
+    const referralCode = trackShareAction(platform, "general", shareUrl);
     const urlWithRef = referralCode ? `${shareUrl}?ref=${referralCode}` : shareUrl;
 
     switch (platform) {

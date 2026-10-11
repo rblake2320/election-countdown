@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { nextElection as getNextElection, type Election, type VotableElectionId } from "@/lib/elections";
+import { ELECTIONS, nextElection as getNextElection, type Election, type VotableElectionId } from "@/lib/elections";
+
 import { getVisitorId } from "@/lib/visitor";
 import { applyAppearance } from "@/lib/themes";
 import { PersonalizeDialog } from "@/components/personalize-dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
 import { VoteIntentForm } from "@/components/vote-intent-form";
@@ -14,7 +16,7 @@ import { MilestoneBanner } from "@/components/milestone-banner";
 import { AnimatedBackground } from "@/components/animated-background";
 import { ShareDrawer } from "@/components/share-drawer";
 import { VerificationBadge } from "@/components/verification-badge";
-import { VerificationDialog } from "@/components/verification-dialog";
+import { VerifyEmailDialog } from "@/components/verify-email-dialog";
 import { useTracking } from "@/hooks/use-tracking";
 import { LogOut, User, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,12 +31,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 
+const INTENT_LABELS: Record<string, string> = { red: "Republican", blue: "Democrat", independent: "Independent", undecided: "Undecided" };
+
 export default function Home() {
   const [quoteHidden, setQuoteHidden] = useState(false);
   // The election a vote intent is recorded for follows the countdown card on screen.
   const [votingFor, setVotingFor] = useState<VotableElectionId>(() => getNextElection().votesFor);
   const handleActiveElection = useCallback((election: Election) => setVotingFor(election.votesFor), []);
   const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { track } = useTracking();
 
   // Fetch verification status (only when signed in)
@@ -93,6 +99,22 @@ export default function Home() {
   useEffect(() => {
     applyAppearance(user?.preferences, !!user?.emailVerified, existingIntent?.intent);
   }, [user?.preferences, user?.emailVerified, existingIntent?.intent]);
+
+  // Deletes every plan saved for this browser's visitor id (privacy: deletion without an account).
+  const removeAnonymousAnswers = async () => {
+    const res = await fetch("/api/intent/anonymous", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId: getVisitorId() }),
+    }).catch(() => null);
+    if (res?.ok) {
+      queryClient.invalidateQueries({ queryKey: ["/api/intent/anonymous"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({ title: "Answers removed", description: "Your saved answers on this browser were deleted." });
+    } else {
+      toast({ title: "Not removed", description: "Please try again.", variant: "destructive" });
+    }
+  };
 
   // Next upcoming event for the milestone banner
   const nextElection = useMemo(() => getNextElection(), []);
@@ -180,13 +202,15 @@ export default function Home() {
                     <span>My Profile</span>
                   </a>
                 </DropdownMenuItem>
-                {!verifyStatus?.isFullyVerified && (
+                {verifyStatus && !verifyStatus.emailVerified && (verifyStatus.verifyWith?.google || verifyStatus.verifyWith?.github) && (
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <VerificationDialog
+                    <VerifyEmailDialog
+                      email={user.email || ""}
+                      verifyWith={verifyStatus.verifyWith}
                       trigger={
-                        <button className="flex items-center w-full text-left">
+                        <button className="flex items-center w-full text-left" data-testid="menu-verify-email">
                           <ShieldCheck className="mr-2 h-4 w-4" />
-                          <span>Verify Identity</span>
+                          <span>Verify email</span>
                         </button>
                       }
                     />
@@ -238,6 +262,23 @@ export default function Home() {
         */}
         {!authLoading && !hasVoteIntent && (
           <div className="mb-8 sm:mb-12">
+            <VoteIntentForm existingIntent={existingIntent} electionId={votingFor} anonymous={!isAuthenticated} />
+          </div>
+        )}
+        {!authLoading && hasVoteIntent && (
+          <div className="mb-8 sm:mb-12 flex flex-col items-center gap-2 text-center" data-testid="your-plan">
+            <p className="text-sm text-muted-foreground">
+              Your plan for the {ELECTIONS.find((e) => e.votesFor === votingFor)?.title}:{" "}
+              <span className="font-semibold text-foreground">
+                {INTENT_LABELS[existingIntent.intent] || existingIntent.intent}{existingIntent.state ? ` · ${existingIntent.state}` : ""}
+              </span>
+              {!isAuthenticated && <span className="ml-1 text-xs">(unverified)</span>}
+            </p>
+            {!isAuthenticated && (
+              <button type="button" onClick={removeAnonymousAnswers} className="text-xs text-muted-foreground underline-offset-4 hover:underline" data-testid="button-remove-anonymous">
+                Remove my answers
+              </button>
+            )}
             <VoteIntentForm existingIntent={existingIntent} electionId={votingFor} anonymous={!isAuthenticated} />
           </div>
         )}

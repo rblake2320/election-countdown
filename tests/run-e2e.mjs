@@ -24,7 +24,6 @@ const suites = [
   ["CSV + duplicate register", ["tests/e2e/csv-and-register.mjs", base, adminSecret, "--expect-fixed"]],
   ["rate limits", ["tests/e2e/rate-limits.mjs", base, "--expect-limits"]],
   ["request flood", ["tests/e2e/request-flood.mjs", base]],
-  ["sign-in panel", ["tests/e2e/signin-panel.mjs", base]],
   ["arrow keys", ["tests/e2e/arrow-keys.mjs", base, "--expect-fixed"]],
   ["election day (fixed instants)", ["tests/e2e/election-day.mjs", base, "--expect-fixed"]],
   ["election day (open page at 1 AM)", ["tests/e2e/election-day-realtime.mjs", base, "2026-11-04T05:59:50Z", "40000"]],
@@ -32,6 +31,7 @@ const suites = [
   ["anonymous votes", ["tests/e2e/anonymous-votes.mjs", base, "--expect-fixed"]],
   ["Google + GitHub sign-in (real provider endpoints)", ["tests/e2e/oauth.mjs", base, "--expect-fixed"]],
   ["themes for verified accounts", ["tests/e2e/themes.mjs", base, persistDir, "--expect-fixed"]],
+  ["app shell: CSP, tracking, profile, dialogs", ["tests/e2e/app-shell.mjs", base, adminSecret, "--expect-fixed"]],
   ["data exports + rollups + dashboard", ["tests/e2e/data-pipeline.mjs", base, adminSecret, "--expect-fixed"]],
   ["nightly worker -> D1 + R2", ["tests/e2e/nightly-worker.mjs", base, workerBase, adminSecret, persistDir]],
 ];

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy | Election Countdown</title>
+    <meta name="robots" content="index,follow" />
+    <style>
+      body { margin: 0; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f8fafc; line-height: 1.6; }
+      main { max-width: 820px; margin: 0 auto; padding: 48px 20px 72px; }
+      h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; margin: 0 0 12px; color: #0f172a; }
+      h2 { font-size: 1.15rem; margin: 32px 0 8px; color: #0f172a; }
+      p, li { font-size: 1rem; }
+      a { color: #1d4ed8; }
+      .updated { color: #475569; margin-bottom: 32px; }
+      .panel { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="./">Back to Election Countdown</a></p>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: October 11, 2026</p>
+      <div class="panel">
+        <p>Election Countdown counts down to U.S. elections and lets visitors share how they plan to vote. Political preference is sensitive information: share only what you are comfortable with, and every demographic field is optional.</p>
+      </div>
+
+      <h2>Information We Collect</h2>
+      <ul>
+        <li><strong>Account (optional).</strong> Email, name, a password hash (email sign-up) or, if you use Google or GitHub, your provider account id and verified email; sign-in sessions; whether your email is verified; your chosen theme.</li>
+        <li><strong>Vote plans, per election.</strong> For each election (2026 midterms, 2028 presidential) your choice and state, plus optional age range, sex, city and candidate. Signed-in plans are stored with your account, and every change is kept as history.</li>
+        <li><strong>Vote plans without an account.</strong> Choice, state and optional age range and sex, stored with a random visitor id kept in your browser. These are counted separately from account plans and labelled unverified.</li>
+        <li><strong>Usage events.</strong> Page views, which countdown you view and for how long, flips between countdowns, clicks, Vote.gov and share clicks, referrals, tab visibility changes, periodic heartbeats and page exits, each with your visitor id, page, referrer, timezone and screen size.</li>
+        <li><strong>Technical data.</strong> Browser user agent and a keyed hash of your IP address (the IP itself is not stored), used for analytics and to stop abuse such as vote stuffing.</li>
+      </ul>
+
+      <h2>How We Use Information</h2>
+      <p>To run the countdown and your profile, record vote plans, show aggregate results, measure how the site is used, prevent abuse (rate limits apply to sign-up, sign-in, voting and analytics), and produce internal analytics and exports for the site operator.</p>
+
+      <h2>Public Results</h2>
+      <p>Only combined totals are ever shown publicly. The red/blue breakdown stays hidden until 50,000 plans exist for an election, and state and age breakdowns stay hidden until each group has at least 50 records. Plans without an account are reported separately and never mixed into the verified totals.</p>
+
+      <h2>Cookies and Browser Storage</h2>
+      <p>An HttpOnly session cookie keeps you signed in, and a short-lived cookie protects the Google/GitHub sign-in step. Your browser stores a random visitor id and your &ldquo;already registered&rdquo; choice, nothing else that identifies you.</p>
+
+      <h2>Storage, Exports and Sharing</h2>
+      <p>Data is stored with Cloudflare (D1 database and R2 storage). A nightly job writes daily summaries and a copy of that day&rsquo;s events and vote plans to private storage; these copies never include email addresses. The operator can export data for analysis; vote-plan exports include email addresses and are handled as confidential. We do not sell personal data.</p>
+
+      <h2>Your Choices and Deletion</h2>
+      <ul>
+        <li>All demographic fields are optional, and you can vote without an account.</li>
+        <li><strong>Account holders:</strong> My Profile &rarr; <em>Delete my account</em> immediately removes your account, sessions, every vote plan and its history, Google/GitHub links, and the usage events linked to your account.</li>
+        <li><strong>Without an account:</strong> after voting, choose <em>Remove my answers</em> under your plan to delete the plans saved for this browser.</li>
+        <li>Copies already written to the private nightly storage are kept for analysis, without email addresses.</li>
+      </ul>
+
+      <h2>Security</h2>
+      <p>Passwords are stored only as salted PBKDF2 hashes; sessions are HttpOnly, Secure, SameSite cookies stored hashed on the server; all traffic is HTTPS; the site runs under a strict Content Security Policy; and abuse limits protect sign-up, sign-in, voting and analytics. No system is perfect.</p>
+
+      <h2>Contact</h2>
+      <p>Use the contact path provided by the site owner for deletion, export, or privacy questions.</p>
+    </main>
+  </body>
+</html>

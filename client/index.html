@@ -2,22 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Election Countdown — Every Second Counts</title>
     <meta name="description" content="Live countdown to the 2026 Midterm Elections & 2028 Presidential Election. Track every day, hour, minute, and second. Register to vote and make your voice heard." />
-    
+
     <meta property="og:title" content="Election Countdown — Every Second Counts" />
     <meta property="og:description" content="Live countdown to the 2026 Midterms & 2028 Presidential Election. Are you registered to vote?" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="./opengraph.jpg" />
-    
+    <meta property="og:image" content="https://election-countdown-38g.pages.dev/opengraph.jpg" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="720" />
+    <meta property="og:image:alt" content="Election Countdown timer for upcoming U.S. elections" />
+
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Election Countdown — Every Second Counts" />
     <meta name="twitter:description" content="Live countdown to the 2026 Midterms & 2028 Presidential Election. Are you registered to vote?" />
-    <meta name="twitter:image" content="./opengraph.jpg" />
+    <meta name="twitter:image" content="https://election-countdown-38g.pages.dev/opengraph.jpg" />
+    <meta name="twitter:image:alt" content="Election Countdown timer for upcoming U.S. elections" />
 
     <meta name="theme-color" content="#1e40af" />
+    <meta name="robots" content="index,follow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="keywords" content="election countdown, 2026 midterms, 2028 presidential election, voter registration, vote" />
 
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -26,7 +32,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the app mounts (and to crawlers / no-JS visitors). -->
+      <main class="launch-prerender" aria-label="Election Countdown loading preview">
+        <section>
+          <div class="launch-prerender__eyebrow">Upcoming Election</div>
+          <h1 class="launch-prerender__title">Election Countdown</h1>
+          <div class="launch-prerender__grid" aria-hidden="true">
+            <div class="launch-prerender__unit"><div class="launch-prerender__num">---</div><div class="launch-prerender__label">DAYS</div></div>
+            <div class="launch-prerender__unit"><div class="launch-prerender__num">--</div><div class="launch-prerender__label">HOURS</div></div>
+            <div class="launch-prerender__unit"><div class="launch-prerender__num">--</div><div class="launch-prerender__label">MIN</div></div>
+            <div class="launch-prerender__unit"><div class="launch-prerender__num">--</div><div class="launch-prerender__label">SEC</div></div>
+          </div>
+          <noscript><p class="launch-prerender__noscript">Turn on JavaScript to see the live countdown.</p></noscript>
+        </section>
+      </main>
+    </div>
+    <nav class="launch-legal-links" aria-label="Legal links">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

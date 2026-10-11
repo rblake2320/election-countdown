@@ -68,7 +68,7 @@ export async function onRequest(context) {
     const oauthMatch = path.match(/^\/auth\/oauth\/(google|github)\/(start|callback)$/);
     if (oauthMatch && request.method === "GET") {
       return (await rateLimited(request, env, "login")) ||
-        (oauthMatch[2] === "start" ? oauthStart(request, env, url, oauthMatch[1]) : oauthCallback(request, env, url, oauthMatch[1]));
+        (oauthMatch[2] === "start" ? oauthStart(request, env, url, oauthMatch[1]) : oauthCallback(request, env, url, oauthMatch[1], user));
     }
     if ((path === "/login" || path === "/auth/login") && request.method === "POST") {
       return (await rateLimited(request, env, "login")) || login(request, env);
@@ -108,8 +108,7 @@ export async function onRequest(context) {
     if (path.startsWith("/track/") && request.method === "POST") {
       return (await rateLimited(request, env, "track")) || track(path.slice(7), request, user, env);
     }
-    if (path === "/verify/status" && request.method === "GET") return verifyStatus(user);
-    if (path.startsWith("/verify/") && request.method === "POST") return verificationStub(path, user, env);
+    if (path === "/verify/status" && request.method === "GET") return verifyStatus(user, env);
 
     return json({ message: "Not found" }, 404);
   } catch (error) {
@@ -364,7 +363,7 @@ function oauthFail(request, code, returnTo = "/") {
   return response;
 }
 
-async function oauthCallback(request, env, url, name) {
+async function oauthCallback(request, env, url, name, sessionUser) {
   const cfg = providerConfig(env, name);
   if (!cfg) return oauthFail(request, "not_configured");
   const saved = readOAuthCookie(readCookie(request, OAUTH_COOKIE));
@@ -385,6 +384,9 @@ async function oauthCallback(request, env, url, name) {
 
   const email = normalizeEmail(profile.email);
   if (!email) return oauthFail(request, "unverified_email", returnTo);
+  // Already signed in = "verify my email": only the same address may link, and the session never
+  // silently switches to a different account.
+  if (sessionUser && normalizeEmail(sessionUser.email) !== email) return oauthFail(request, "email_mismatch", returnTo);
   const now = new Date().toISOString();
   const linked = await env.DB.prepare("SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_user_id = ?")
     .bind(name, profile.providerUserId).first();
@@ -479,7 +481,7 @@ async function account(user, env) {
   const intentHistory = await readIntentHistory(user, env);
   return json({
     user,
-    verification: verificationPayload(user),
+    verification: verificationPayload(user, env),
     intent: intents[DEFAULT_ELECTION] || null,
     intents,
     intentHistory
@@ -849,39 +851,24 @@ function cleanEventType(value) {
   return String(value || "event").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "event";
 }
 
-function verifyStatus(user) {
+function verifyStatus(user, env) {
   if (!user) return json({ message: "Sign in required" }, 401);
-  return json(verificationPayload(user));
+  return json(verificationPayload(user, env));
 }
 
-function verificationPayload(user) {
+// Email verification happens by signing in with Google or GitHub (see lib/oauth.js).
+function verificationPayload(user, env) {
   return {
+    ecId: user.ecId,
     emailVerified: !!user.emailVerified,
     phoneVerified: !!user.phoneVerified,
     isFullyVerified: !!user.isFullyVerified,
     trustScore: user.trustScore || 0,
-    providerConfigured: false,
-    message: "Verification provider is not configured yet"
+    verifiedAt: user.verifiedAt || null,
+    verifyWith: env ? enabledProviders(env) : { google: false, github: false }
   };
 }
 
-async function verificationStub(path, user, env) {
-  if (!user) return json({ message: "Sign in required" }, 401);
-  await env.DB.prepare(
-    "INSERT INTO verification_events (id, user_id, channel, action, created_at) VALUES (?, ?, ?, ?, ?)"
-  ).bind(
-    crypto.randomUUID(),
-    user.id,
-    path.includes("/email/") ? "email" : "phone",
-    path.endsWith("/send") ? "send" : "confirm",
-    new Date().toISOString()
-  ).run();
-  return json({
-    ok: false,
-    code: "verification_provider_not_configured",
-    message: "Verification is not enabled yet"
-  }, 503);
-}
 
 async function currentUser(request, env) {
   const token = readCookie(request, SESSION_COOKIE);
@@ -1229,7 +1216,7 @@ function securityHeaders() {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=()",
     "cross-origin-opener-policy": "same-origin",
-    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'",
+    "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
     "strict-transport-security": "max-age=31536000; includeSubDomains"
   };
 }
