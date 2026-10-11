@@ -9,7 +9,7 @@ const INTENTS = new Set(["red", "blue", "independent", "undecided"]);
 const AGE_RANGES = new Set(["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]);
 const SEXES = new Set(["male", "female", "other", "prefer_not_to_say"]);
 // Written only by the server; clients may not send these through /track (they feed admin metrics).
-const SERVER_EVENT_TYPES = new Set(["login", "register", "intent_saved", "intent_changed"]);
+const SERVER_EVENT_TYPES = new Set(["login", "register", "intent_saved", "intent_changed", "anon_intent_saved"]);
 const MAX_TRACK_BATCH = 25;
 const STATS_MAX_AGE_SECONDS = 30;
 // Elections a vote intent can be recorded for. Ids match the client countdown ids.
@@ -22,7 +22,9 @@ const RATE_LIMITS = {
   register: { limit: 5, windowMinutes: 60 },
   login: { limit: 20, windowMinutes: 15 },
   intent: { limit: 30, windowMinutes: 60 },
-  track: { limit: 300, windowMinutes: 10 }
+  track: { limit: 300, windowMinutes: 10 },
+  // Stricter than account votes: no sign-up stands between a script and this endpoint.
+  anonIntent: { limit: 10, windowMinutes: 60 }
 };
 // True until migrations/0001_election_id.sql has been applied to this database.
 let legacyIntentSchema = false;
@@ -74,6 +76,12 @@ export async function onRequest(context) {
       return csrfProtected(request, async () =>
         (user && await rateLimited(request, env, "intent", "user:" + user.id)) || saveIntent(request, user, env, election));
     }
+    if (path === "/intent/anonymous" && request.method === "GET") return getAnonIntent(url, env, election);
+    if (path === "/intent/anonymous" && request.method === "POST") {
+      return csrfProtected(request, async () =>
+        (await rateLimited(request, env, "anonIntent")) || saveAnonIntent(request, user, env, election));
+    }
+    if (path === "/intent/anonymous" && request.method === "DELETE") return csrfProtected(request, () => deleteAnonIntents(request, env));
     if (path === "/intent/history" && request.method === "GET") return intentHistory(user, env);
     if (path === "/intent/aggregate" && request.method === "GET") return stats(env, election);
     if (path === "/stats" && request.method === "GET") return stats(env, election);
@@ -216,6 +224,21 @@ async function ensureSchema(env) {
       count INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (key, bucket)
     )`,
+    `CREATE TABLE IF NOT EXISTS anon_vote_intents (
+      id TEXT PRIMARY KEY,
+      visitor_id TEXT NOT NULL,
+      election_id TEXT NOT NULL,
+      intent TEXT NOT NULL,
+      state TEXT NOT NULL,
+      age_range TEXT,
+      sex TEXT,
+      ip_hash TEXT,
+      user_agent TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE (visitor_id, election_id)
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_anon_vote_intents_election_intent ON anon_vote_intents(election_id, intent)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)",
     "CREATE INDEX IF NOT EXISTS idx_vote_intent_history_user ON vote_intent_history(user_id, changed_at)",
@@ -458,25 +481,94 @@ async function saveIntent(request, user, env, queryElection) {
   return json({ ...record, state: record.state });
 }
 
+// Top-level fields are account votes (the counted numbers, unchanged for older clients).
+// `anonymous` is reported separately and never mixed in: it may include bots.
 async function stats(env, election) {
-  const byIntent = await countsBy(env, "intent", election);
+  const accounts = publicBreakdown(await countsBy(env, "intent", election));
+  const anonymous = publicBreakdown(await countsBy(env, "intent", election, "anon_vote_intents"));
+  return json({
+    electionId: election,
+    ...accounts,
+    message: `${MIN_PUBLIC_BREAKDOWN.toLocaleString()} participants needed to show results`,
+    anonymous: {
+      ...anonymous,
+      verified: false,
+      note: "Votes from visitors without an account. Counted separately; may include bots."
+    }
+  }, 200, { "cache-control": `public, max-age=${STATS_MAX_AGE_SECONDS}` });
+}
+
+function publicBreakdown(byIntent) {
   const total = Object.values(byIntent).reduce((sum, count) => sum + count, 0);
   const thresholdMet = total >= MIN_PUBLIC_BREAKDOWN;
   const red = byIntent.red || 0;
   const blue = byIntent.blue || 0;
-
-  return json({
-    electionId: election,
+  return {
     total,
     showBar: thresholdMet,
     threshold: MIN_PUBLIC_BREAKDOWN,
-    message: `${MIN_PUBLIC_BREAKDOWN.toLocaleString()} participants needed to show results`,
     redPercent: thresholdMet && total ? Math.round((red / total) * 100) : 0,
     bluePercent: thresholdMet && total ? Math.round((blue / total) * 100) : 0,
     redRange: thresholdMet ? percentRange(red, total) : null,
     blueRange: thresholdMet ? percentRange(blue, total) : null,
     undecided: thresholdMet ? byIntent.undecided || 0 : 0
-  }, 200, { "cache-control": `public, max-age=${STATS_MAX_AGE_SECONDS}` });
+  };
+}
+
+// Anonymous visitors are identified only by a random id their browser keeps (ec_visitor_id).
+function visitorIdFrom(value) {
+  const id = String(value || "");
+  return /^v_[a-z0-9]{8,48}$/.test(id) ? id : null;
+}
+
+async function getAnonIntent(url, env, election) {
+  const visitorId = visitorIdFrom(url.searchParams.get("visitorId"));
+  if (!visitorId) return json({ message: "Valid visitorId required" }, 400);
+  const row = await env.DB.prepare("SELECT * FROM anon_vote_intents WHERE visitor_id = ? AND election_id = ?")
+    .bind(visitorId, election).first();
+  return json(row ? { ...publicIntent(row), anonymous: true } : null);
+}
+
+async function saveAnonIntent(request, user, env, queryElection) {
+  if (user) return json({ message: "You're signed in; your vote is saved to your account instead." }, 409);
+  const input = await readJson(request);
+  const visitorId = visitorIdFrom(input.visitorId);
+  if (!visitorId) return json({ message: "Valid visitorId required" }, 400);
+  if (!INTENTS.has(input.intent) || !STATES.has(input.state)) {
+    return json({ message: "Valid intent and state are required" }, 400);
+  }
+  if ((input.ageRange != null && input.ageRange !== "" && !AGE_RANGES.has(input.ageRange)) ||
+      (input.sex != null && input.sex !== "" && !SEXES.has(input.sex))) {
+    return json({ message: "Invalid age range or sex" }, 400);
+  }
+  const election = input.electionId == null ? queryElection : electionFrom(input.electionId);
+  if (election === null) return json({ message: "Unknown election" }, 400);
+
+  const now = new Date().toISOString();
+  const ageRange = input.ageRange || null;
+  const sex = input.sex || null;
+  await env.DB.prepare(
+    `INSERT INTO anon_vote_intents (
+      id, visitor_id, election_id, intent, state, age_range, sex, ip_hash, user_agent, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(visitor_id, election_id) DO UPDATE SET
+      intent = excluded.intent, state = excluded.state, age_range = excluded.age_range,
+      sex = excluded.sex, ip_hash = excluded.ip_hash, user_agent = excluded.user_agent,
+      updated_at = excluded.updated_at`
+  ).bind(
+    crypto.randomUUID(), visitorId, election, input.intent, input.state, ageRange, sex,
+    await ipHash(request, env), (request.headers.get("user-agent") || "").slice(0, 300), now, now
+  ).run();
+  await writeEvent(env, request, null, "anon_intent_saved", { electionId: election, intent: input.intent, visitorId });
+  return json({ electionId: election, intent: input.intent, state: input.state, ageRange, sex, anonymous: true });
+}
+
+async function deleteAnonIntents(request, env) {
+  const input = await readJson(request);
+  const visitorId = visitorIdFrom(input.visitorId);
+  if (!visitorId) return json({ message: "Valid visitorId required" }, 400);
+  const result = await env.DB.prepare("DELETE FROM anon_vote_intents WHERE visitor_id = ?").bind(visitorId).run();
+  return json({ ok: true, deleted: result.meta?.changes ?? 0 });
 }
 
 async function donations(user, env) {
@@ -539,6 +631,7 @@ async function adminAnalytics(request, env, election) {
       undecided: byIntent.undecided || 0,
       total
     },
+    anonymousVotesByIntent: await countsBy(env, "intent", election, "anon_vote_intents"),
     intentChanges: await scalar(env, "SELECT COUNT(*) FROM vote_intent_history WHERE previous_intent IS NOT NULL AND election_id = ?", [election]),
     flipStats: flipStats.results || []
   });
@@ -689,11 +782,12 @@ function validAdminSecret(secret, production) {
   return production ? value.length >= MIN_PROD_SECRET_LENGTH : value.length > 0;
 }
 
-async function countsBy(env, field, election) {
+async function countsBy(env, field, election, table = "vote_intents") {
   const allowed = new Set(["intent", "state", "age_range"]);
   if (!allowed.has(field)) throw new Error("Unsupported count field");
+  if (!["vote_intents", "anon_vote_intents"].includes(table)) throw new Error("Unsupported table");
   const rows = await env.DB.prepare(
-    `SELECT ${field} AS key, COUNT(*) AS count FROM vote_intents WHERE election_id = ? GROUP BY ${field}`
+    `SELECT ${field} AS key, COUNT(*) AS count FROM ${table} WHERE election_id = ? GROUP BY ${field}`
   ).bind(election).all();
   return Object.fromEntries((rows.results || []).map((row) => [row.key || "not_provided", row.count]));
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { nextElection as getNextElection, type Election, type VotableElectionId } from "@/lib/elections";
+import { getVisitorId } from "@/lib/visitor";
 import { useQuery } from "@tanstack/react-query";
 import { DualCountdown } from "@/components/dual-countdown";
 import { QuoteDisplay } from "@/components/quote-display";
@@ -59,15 +60,16 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  // Fetch user's existing vote intent
+  // Existing answer for the election on screen: the account's if signed in, otherwise the
+  // anonymous answer saved under this browser's visitor id.
   const { data: existingIntent } = useQuery({
-    queryKey: ["/api/intent", votingFor],
+    queryKey: [isAuthenticated ? "/api/intent" : "/api/intent/anonymous", votingFor],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/intent?election=${votingFor}`, {
-          credentials: "include",
-          signal: AbortSignal.timeout(2000),
-        });
+        const url = isAuthenticated
+          ? `/api/intent?election=${votingFor}`
+          : `/api/intent/anonymous?election=${votingFor}&visitorId=${getVisitorId()}`;
+        const res = await fetch(url, { credentials: "include", signal: AbortSignal.timeout(2000) });
         if (res.status === 401) return null;
         if (!res.ok) throw new Error("Failed to fetch intent");
         return res.json();
@@ -75,7 +77,7 @@ export default function Home() {
         return null;
       }
     },
-    enabled: isAuthenticated,
+    enabled: !authLoading,
   });
 
   // Dark mode is disabled for launch: always light, and clear any saved preference.
@@ -226,7 +228,7 @@ export default function Home() {
 
         {/* Aggregate bar — always visible */}
         <div className="mb-8 sm:mb-12 w-full">
-          <AggregateBar />
+          <AggregateBar electionId={votingFor} />
         </div>
 
         {/*
@@ -240,12 +242,12 @@ export default function Home() {
         )}
 
         {/*
-          Vote Intent — only show if signed in AND hasn't submitted intent yet.
-          Once submitted, it's done — they can change it from their profile.
+          Vote Intent — shown until this election has an answer. Signing in is optional:
+          signed-out visitors vote into the separate unverified tally.
         */}
-        {isAuthenticated && !hasVoteIntent && (
+        {!authLoading && !hasVoteIntent && (
           <div className="mb-8 sm:mb-12">
-            <VoteIntentForm existingIntent={existingIntent} electionId={votingFor} />
+            <VoteIntentForm existingIntent={existingIntent} electionId={votingFor} anonymous={!isAuthenticated} />
           </div>
         )}
 

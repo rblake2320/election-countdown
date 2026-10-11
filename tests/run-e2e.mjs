@@ -27,6 +27,7 @@ const suites = [
   ["election day (fixed instants)", ["tests/e2e/election-day.mjs", base, "--expect-fixed"]],
   ["election day (open page at 1 AM)", ["tests/e2e/election-day-realtime.mjs", base, "2026-11-04T05:59:50Z", "40000"]],
   ["vote on 2028 card", ["tests/e2e/vote-election.mjs", base]],
+  ["anonymous votes", ["tests/e2e/anonymous-votes.mjs", base, "--expect-fixed"]],
 ];
 
 function run(cmd, args) {
