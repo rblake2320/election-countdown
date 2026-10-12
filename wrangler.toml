@@ -5,6 +5,9 @@ compatibility_date = "2026-05-14"
 # Production (and local `wrangler pages dev`).
 [vars]
 ENVIRONMENT = "production"
+# Pages on these hosts redirect to the canonical domain (functions/_middleware.js).
+CANONICAL_HOST = "electionclock.com"
+REDIRECT_HOSTS = "election-countdown-38g.pages.dev,www.electionclock.com"
 
 [[d1_databases]]
 binding = "DB"

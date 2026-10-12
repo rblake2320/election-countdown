@@ -2,6 +2,8 @@
 
 Live countdown to the 2026 Midterms and 2028 Presidential Election: voter registration links, per-election vote plans (with or without an account), Google/GitHub sign-in, themes for verified accounts, and an admin analytics dashboard with exports and a nightly data pipeline.
 
+Live at **https://electionclock.com** (the old `election-countdown-38g.pages.dev` address and `www` redirect there).
+
 ## Screenshots
 
 **Desktop**
