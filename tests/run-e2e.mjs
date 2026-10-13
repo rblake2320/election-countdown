@@ -23,6 +23,7 @@ const workerLog = join(logDir, "worker.log");
 const suites = [
   ["migration", ["tests/e2e/migration.mjs", "tests/fixtures/schema-pre-election-id.sql", "migrations/0001_election_id.sql"]],
   ["deploy folder", ["tests/e2e/deploy-folder.mjs", base]],
+  ["state voting dates", ["tests/e2e/state-dates.mjs", base]],
   ["canonical domain redirect", ["tests/e2e/canonical-redirect.mjs", base]],
   ["per-election API", ["tests/e2e/api-elections.mjs", base, adminSecret]],
   ["API hardening", ["tests/e2e/api-hardening.mjs", base, adminSecret, "--expect-fixed"]],
