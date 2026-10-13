@@ -94,6 +94,11 @@ out.servedMatchesRepo = JSON.stringify(served) === JSON.stringify(file);
 //    which is what a voter clicking the link actually uses.
 const urls = [...new Set(CODES.map((c) => file.states[c].source.url))];
 const unreachable = [];
+// A Cloudflare-style challenge page ("Just a moment...") means the site is up and screening robots.
+// GitHub's runners get challenged where a home connection does not, so a challenge is reported but
+// is not a dead link. Dead = 404, 5xx, network error, "Access Denied" or a maintenance page.
+const challenged = [];
+const isChallenge = (title) => /^Just a moment/i.test(title || "");
 const probeBrowser = await chromium.launch();
 async function probe(url) {
   const ua = { "user-agent": "Mozilla/5.0 (compatible; electionclock-source-check/1.0)" };
@@ -119,6 +124,7 @@ async function probe(url) {
       const title = await page.title();
       const bodyText = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || "");
       if (!/Just a moment|Access Denied|Website Maintenance/i.test(title) && !/Access Denied|403 Forbidden|404 Not Found/i.test(bodyText)) return null;
+      if (isChallenge(title)) return { challenged: `${url} -> ${last}, bot challenge` };
       last = `${last}, browser "${title}"`;
     } catch (e) {
       last = `${last}, browser ${e.name}: ${e.message}`;
@@ -132,11 +138,18 @@ let next = 0;
 await Promise.all(Array.from({ length: 8 }, async () => {
   while (next < urls.length) {
     const r = await probe(urls[next++]);
-    if (r) unreachable.push(r);
+    if (r?.challenged) challenged.push(r.challenged);
+    else if (r) unreachable.push(r);
   }
 }));
 await probeBrowser.close();
-out.sources = { distinct: urls.length, unreachable };
+out.sources = { distinct: urls.length, unreachable, challenged };
+if (challenged.length) console.log("BOT-CHALLENGED SOURCES (site up, screening robots):", JSON.stringify(challenged));
+// Controls for the classifier in both directions.
+assert.equal(isChallenge("Just a moment..."), true, "Cloudflare challenge title is a challenge");
+assert.equal(isChallenge("Access Denied"), false, "Access Denied is not a challenge");
+assert.equal(isChallenge("Website Maintenance"), false, "maintenance page is not a challenge");
+assert.equal(isChallenge(""), false);
 
 // 5. Browser: choose Georgia, the key-dates block shows the JSON's registration date, the
 //    choice is remembered in localStorage (ec_state) and preselected on reload.
