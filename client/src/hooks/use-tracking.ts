@@ -4,7 +4,7 @@ import { getVisitorId } from "@/lib/visitor";
 
 type EventType =
   | "register_click" | "share_click" | "sign_in_click" | "sign_up_complete"
-  | "vote_intent_submit" | "quote_shuffle" | "quote_hide" | "state_select" | "external_link";
+  | "vote_intent_submit" | "quote_shuffle" | "quote_hide" | "state_selected" | "external_link";
 
 /** Short, stable referral code for this browser: arrivals with ?ref=<code> are attributed to it. */
 export function referralCode(): string {

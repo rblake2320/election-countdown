@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, CheckCircle2, MapPin, PartyPopper } from "lucide-react";
+import { ExternalLink, CheckCircle2, MapPin, PartyPopper, CalendarDays } from "lucide-react";
 import { useTracking } from "@/hooks/use-tracking";
+import { formatVotingDate, latestDate, loadStateVoting, type StateVoting, type StateVotingFile } from "@/lib/state-voting";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -41,9 +42,20 @@ const US_STATES = [
 ] as const;
 
 const REGISTERED_KEY = "ec_voter_registered";
+const STATE_KEY = "ec_state";
+
+function readSavedState(): string {
+  try {
+    const saved = localStorage.getItem(STATE_KEY) || "";
+    return US_STATES.some((s) => s.code === saved) ? saved : "";
+  } catch {
+    return "";
+  }
+}
 
 export function VoterRegistrationCTA() {
-  const [selectedState, setSelectedState] = useState<string>("");
+  const [selectedState, setSelectedState] = useState<string>(readSavedState);
+  const [votingData, setVotingData] = useState<StateVotingFile | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const { track } = useTracking();
@@ -56,6 +68,24 @@ export function VoterRegistrationCTA() {
       }
     } catch {}
   }, []);
+
+  // One static JSON fetch (cached in module scope), only once a state is chosen.
+  useEffect(() => {
+    if (!selectedState || votingData) return;
+    let cancelled = false;
+    loadStateVoting()
+      .then((data) => { if (!cancelled) setVotingData(data); })
+      .catch(() => { /* block simply stays hidden; the vote.gov link still works */ });
+    return () => { cancelled = true; };
+  }, [selectedState, votingData]);
+
+  const selectState = (code: string) => {
+    setSelectedState(code);
+    try {
+      localStorage.setItem(STATE_KEY, code);
+    } catch {}
+    track("state_selected", { state: code });
+  };
 
   const getStateRegistrationUrl = (stateCode: string) => {
     return `https://vote.gov/register/${stateCode.toLowerCase()}/`;
@@ -145,7 +175,7 @@ export function VoterRegistrationCTA() {
               <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <Select value={selectedState} onValueChange={(val) => { setSelectedState(val); track("state_select", { state: val }); }}>
+                  <Select value={selectedState} onValueChange={selectState}>
                     <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="Select your state" />
                     </SelectTrigger>
@@ -195,6 +225,10 @@ export function VoterRegistrationCTA() {
                 )}
               </div>
 
+              {selectedState && votingData?.states[selectedState] && (
+                <StateKeyDates code={selectedState} info={votingData.states[selectedState]} onLinkClick={(url) => track("external_link", { url, state: selectedState })} />
+              )}
+
               {/* Already registered option */}
               <div className="pt-1">
                 <button
@@ -213,5 +247,73 @@ export function VoterRegistrationCTA() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function DateRow({ label, children, testId }: { label: string; children: ReactNode; testId: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium" data-testid={testId}>{children}</dd>
+    </div>
+  );
+}
+
+/** Compact "Key dates" block for the chosen state; every unverified date says to check the state's site. */
+function StateKeyDates({ code, info, onLinkClick }: { code: string; info: StateVoting; onLinkClick: (url: string) => void }) {
+  const { registration, earlyVoting, mail, source, officialUrl } = info;
+  const methods = [
+    ["online", registration.online],
+    ["by mail", registration.mail],
+    ["in person", registration.inPerson],
+  ] as const;
+  const registerBy = latestDate(methods.map(([, d]) => d));
+  const methodsDiffer = new Set(methods.map(([, d]) => d)).size > 1;
+  const earlyText = earlyVoting.start || earlyVoting.end
+    ? `${formatVotingDate(earlyVoting.start)} – ${formatVotingDate(earlyVoting.end)}`
+    : formatVotingDate(null);
+
+  return (
+    <div className="rounded-xl border border-primary/15 bg-background/60 p-4 text-left text-sm" data-testid="state-key-dates" data-state={code}>
+      <div className="mb-2 flex items-center gap-2">
+        <CalendarDays className="h-4 w-4 text-primary" />
+        <h4 className="font-serif font-bold">Key dates for {info.name}</h4>
+      </div>
+      <dl className="space-y-1.5">
+        <DateRow label="Register by" testId="state-register-by">
+          {formatVotingDate(registerBy)}
+          {registerBy && methodsDiffer && (
+            <span className="block text-xs font-normal text-muted-foreground">
+              {methods.map(([m, d]) => `${m}: ${formatVotingDate(d)}`).join(" · ")}
+            </span>
+          )}
+          {registration.sameDay && (
+            <span className="block text-xs font-normal text-green-700 dark:text-green-400">Same-day registration available</span>
+          )}
+          {registration.note && <span className="block text-xs font-normal text-muted-foreground">{registration.note}</span>}
+        </DateRow>
+        <DateRow label="Early voting" testId="state-early-voting">
+          {earlyText}
+          {earlyVoting.note && <span className="block text-xs font-normal text-muted-foreground">{earlyVoting.note}</span>}
+        </DateRow>
+        <DateRow label="Mail ballot" testId="state-mail-ballot">
+          request by {formatVotingDate(mail.requestBy)}, return by {formatVotingDate(mail.returnBy)}
+          {mail.postmarkOk && <span className="block text-xs font-normal text-muted-foreground">postmark counts</span>}
+          {mail.note && <span className="block text-xs font-normal text-muted-foreground">{mail.note}</span>}
+        </DateRow>
+      </dl>
+      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+        Source:{" "}
+        <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground" onClick={() => onLinkClick(source.url)}>
+          {source.title}
+        </a>{" "}
+        · checked {source.checkedOn}
+        <br />
+        <a href={officialUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline-offset-4 hover:underline" onClick={() => onLinkClick(officialUrl)} data-testid="state-official-link">
+          Official {info.name} election site
+          <ExternalLink className="ml-1 inline h-3 w-3" />
+        </a>
+      </p>
+    </div>
   );
 }

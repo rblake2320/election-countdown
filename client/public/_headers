@@ -25,3 +25,6 @@
   ! X-Frame-Options
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors *
+
+/data/*
+  Cache-Control: public, max-age=3600
