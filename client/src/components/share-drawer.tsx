@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Share2, Copy, Check, Twitter, Facebook, Mail, MessageCircle } from "lucide-react";
+import { Share2, Copy, Check, Twitter, Facebook, Mail, MessageCircle, Code } from "lucide-react";
 import { useTracking } from "@/hooks/use-tracking";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,14 +19,30 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+// The embed must point at the public site: a preview/*.pages.dev origin is never handed out.
+function embedHost(): string {
+  const origin = window.location.origin;
+  return /pages\.dev$/.test(window.location.hostname) ? "https://electionclock.com" : origin;
+}
+
 export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
   const { track, trackShareAction } = useTracking();
   const { toast } = useToast();
 
   const shareUrl = window.location.href.split("?")[0];
   const shareText = "Track every second until the next election. Make your vote count!";
+  const embedSnippet = `<iframe src="${embedHost()}/embed.html?election=midterm-2026" width="320" height="140" style="border:0" title="Election Countdown" loading="lazy"></iframe>`;
+
+  const handleCopyEmbed = async () => {
+    track("share_click", { channel: "embed" });
+    await navigator.clipboard.writeText(embedSnippet);
+    setEmbedCopied(true);
+    setTimeout(() => setEmbedCopied(false), 2000);
+    toast({ title: "Embed code copied", description: "Paste it into your site's HTML" });
+  };
 
   const handleOpen = () => {
     setOpen(true);
@@ -146,6 +162,28 @@ export function ShareDrawer({ trigger }: { trigger?: React.ReactNode }) {
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copied!" : "Copy Link"}
+          </Button>
+        </div>
+
+        <div className="mt-4 border-t pt-4" data-testid="embed-section">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <Code className="h-4 w-4" />
+            Embed on your site
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">Add the live countdown to any web page with one line.</p>
+          <pre
+            data-testid="embed-snippet"
+            className="mt-2 rounded-md bg-muted p-2 text-[11px] leading-snug whitespace-pre-wrap break-all font-mono select-all"
+          >{embedSnippet}</pre>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyEmbed}
+            className="w-full gap-2 mt-2"
+            data-testid="button-copy-embed"
+          >
+            {embedCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {embedCopied ? "Copied!" : "Copy embed code"}
           </Button>
         </div>
 

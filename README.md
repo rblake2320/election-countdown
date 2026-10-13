@@ -38,6 +38,17 @@ npx wrangler pages deploy   # publishes public/ + functions/ only
 Database changes ship as files in `migrations/`; apply them to production **before** deploying
 code that needs them (see [LAUNCH.md](LAUNCH.md)).
 
+## Embed the countdown
+
+Any site can show the live countdown with one line. Every embed links back to electionclock.com.
+
+```html
+<iframe src="https://electionclock.com/embed.html?election=midterm-2026" width="320" height="140" style="border:0" title="Election Countdown" loading="lazy"></iframe>
+```
+
+Query parameters: `election=midterm-2026|presidential-2028` (default: the next upcoming election)
+and `theme=light|dark` (default light). The snippet is also in the site's share dialog under "Embed".
+
 ## Tests
 
 ```bash
