@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Election Countdown</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --fg: #0f172a;
+        --muted: #475569;
+        --panel: #ffffff;
+        --border: #dbe3ef;
+        --accent: #1d4ed8;
+      }
+      :root[data-theme="dark"] {
+        --bg: #0b1220;
+        --fg: #f1f5f9;
+        --muted: #94a3b8;
+        --panel: #111a2e;
+        --border: #263247;
+        --accent: #93c5fd;
+      }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        overflow: hidden;
+      }
+      .widget {
+        box-sizing: border-box;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: clamp(6px, 5vh, 14px) clamp(8px, 3vw, 20px);
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+      .title {
+        margin: 0;
+        font-weight: 600;
+        font-size: clamp(11px, 2.4vw + 4vh, 18px);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .counts {
+        display: flex;
+        justify-content: space-between;
+        gap: clamp(4px, 2vw, 16px);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .counts li { flex: 1; text-align: center; min-width: 0; }
+      .num {
+        display: block;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        font-size: clamp(18px, 7vw + 14vh, 56px);
+        line-height: 1;
+      }
+      .label {
+        display: block;
+        font-size: clamp(8px, 1.6vw + 3vh, 13px);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .today {
+        display: none;
+        text-align: center;
+        font-weight: 700;
+        font-size: clamp(16px, 4vw + 10vh, 40px);
+        line-height: 1.1;
+      }
+      .widget.is-today .counts { display: none; }
+      .widget.is-today .today { display: block; }
+      .footer {
+        margin: 0;
+        font-size: clamp(9px, 1.4vw + 3vh, 13px);
+        color: var(--muted);
+        text-align: right;
+      }
+      .footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+      .footer a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="widget" id="widget">
+      <p class="title" id="title">Election Countdown</p>
+      <ul class="counts" id="counts">
+        <li><span class="num" id="days">--</span><span class="label">Days</span></li>
+        <li><span class="num" id="hours">--</span><span class="label">Hours</span></li>
+        <li><span class="num" id="minutes">--</span><span class="label">Minutes</span></li>
+        <li><span class="num" id="seconds">--</span><span class="label">Seconds</span></li>
+      </ul>
+      <p class="today" id="today">Today is Election Day</p>
+      <p class="footer">Countdown by <a id="link" href="https://electionclock.com" target="_blank" rel="noopener">electionclock.com</a></p>
+    </div>
+    <script src="./embed.js"></script>
+  </body>
+</html>

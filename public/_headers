@@ -12,3 +12,19 @@
 
 /api/*
   Cache-Control: no-store
+
+# The embeddable widget may be framed by any site (the whole point of it). It loads only its own
+# script and inline styles. The "!" lines detach the site-wide headers above. Pages serves
+# /embed.html at the clean URL /embed (308), so both paths get the rule.
+/embed.html
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors *
+
+/embed
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors *
+
+/data/*
+  Cache-Control: public, max-age=3600

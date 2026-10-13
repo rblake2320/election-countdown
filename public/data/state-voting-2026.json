@@ -1,0 +1,1384 @@
+{
+  "election": "midterm-2026",
+  "electionDay": "2026-11-03",
+  "generatedOn": "2026-10-13",
+  "states": {
+    "AL": {
+      "name": "Alabama",
+      "registration": {
+        "online": "2026-10-19",
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": false,
+        "note": "Mail = postmarked by Oct 19; in person by close of business; online by 11:59 p.m."
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Alabama has no in-person early voting; in-person absentee application through Oct 29 only"
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "In-person application through Oct 29; hand-delivered ballots by Nov 2; mailed ballots received by noon Election Day"
+      },
+      "source": {
+        "url": "https://www.sos.alabama.gov/sites/default/files/election-2026/2026-VoterGuide.pdf",
+        "title": "2026 Voter Guide - Alabama Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.alabama.gov/alabama-votes"
+    },
+    "AK": {
+      "name": "Alaska",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": null,
+        "sameDay": false,
+        "note": "Official site unavailable when checked; vote.gov rule: 30 days before Election Day"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Official site unavailable when checked; not verified"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Official site unavailable when checked; not verified"
+      },
+      "source": {
+        "url": "https://vote.gov/register/ak/",
+        "title": "How to register in Alaska | Vote.gov",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.elections.alaska.gov/"
+    },
+    "AZ": {
+      "name": "Arizona",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "SOS prints a single registration deadline, Oct 5 at 11:59 p.m., no per-method split"
+      },
+      "earlyVoting": {
+        "start": "2026-10-07",
+        "end": null,
+        "note": "End date not printed on the official page"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Request deadline and 7:00 p.m. Election Day receipt rule are in the publicity pamphlet; not verified"
+      },
+      "source": {
+        "url": "https://azsos.gov/news/1063",
+        "title": "60 Days. 60 Facts. Arizona Dot Vote Election Facts Campaign Launches ... | Arizona Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://azsos.gov/elections"
+    },
+    "AR": {
+      "name": "Arkansas",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "no online registration; statutory deadline Sunday Oct 4 extended to Monday Oct 5, 2026 (mail = postmark)"
+      },
+      "earlyVoting": {
+        "start": "2026-10-19",
+        "end": "2026-11-02",
+        "note": "ends 5:00 pm Monday Nov 2"
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Mail/fax/email applications by Oct 27; in-person applications by Oct 30; ballots received by 7:30 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://www.sos.arkansas.gov/uploads/elections/2026_Election_Calendar_Rev._6-2025_.pdf",
+        "title": "Arkansas Secretary of State 2026 ELECTION DATES (Rev. June 2025)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.arkansas.gov/elections"
+    },
+    "CA": {
+      "name": "California",
+      "registration": {
+        "online": "2026-10-19",
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": true,
+        "note": "mail = postmark; after Oct 19 use Same Day (conditional) registration Oct 20 - Nov 3"
+      },
+      "earlyVoting": {
+        "start": "2026-10-05",
+        "end": null,
+        "note": "County offices open Oct 5; Voter's Choice Act vote centers open Oct 24; runs through Election Day"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Ballots mailed to all registered voters from Oct 5; postmarked by Election Day and received by Nov 10 counts"
+      },
+      "source": {
+        "url": "https://www.sos.ca.gov/elections/upcoming-elections/general-election-november-3-2026/key-dates-deadlines",
+        "title": "Key Dates and Deadlines :: California Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.ca.gov/elections"
+    },
+    "CO": {
+      "name": "Colorado",
+      "registration": {
+        "online": "2026-10-26",
+        "mail": "2026-10-26",
+        "inPerson": null,
+        "sameDay": true,
+        "note": "Oct 26 = last day to register and be mailed a ballot; in-person registration through 7:00 p.m. Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-19",
+        "end": null,
+        "note": "All-mail state; in-person voting at voter service and polling centers from Oct 19 through Election Day"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Ballots mailed to all active voters Oct 2-9; postmarks do not count; received by 7:00 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://www.coloradosos.gov/pubs/newsRoom/pressReleases/2026/PR20260923GeneralElection.html",
+        "title": "News Release - Colorado Secretary of State (2026 General Election key dates)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.coloradosos.gov/pubs/elections/"
+    },
+    "CT": {
+      "name": "Connecticut",
+      "registration": {
+        "online": "2026-10-16",
+        "mail": "2026-10-16",
+        "inPerson": "2026-10-16",
+        "sameDay": true,
+        "note": "Single advance deadline printed (Oct 16); same-day registration during early voting and on Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-19",
+        "end": "2026-11-01",
+        "note": "10 a.m.-6 p.m.; 8 a.m.-8 p.m. on Oct 27 and Oct 29"
+      },
+      "mail": {
+        "requestBy": "2026-11-02",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "no-excuse absentee (Public Act 26-42); ballots must be received by close of polls 8:00 pm Election Day"
+      },
+      "source": {
+        "url": "https://portal.ct.gov/-/media/sots/education/early-voting/2026_ev-ab/2026_ev-ab_one-sheeter.pdf",
+        "title": "YOUR THREE VOTING OPTIONS - ELECTION DAY Tuesday, November 3, 2026 (CT SOTS one-sheeter)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://portal.ct.gov/sots/election-services"
+    },
+    "DE": {
+      "name": "Delaware",
+      "registration": {
+        "online": "2026-10-10",
+        "mail": "2026-10-10",
+        "inPerson": "2026-10-10",
+        "sameDay": false,
+        "note": "single printed deadline Saturday Oct 10; military/overseas voters until Oct 19"
+      },
+      "earlyVoting": {
+        "start": "2026-10-22",
+        "end": "2026-11-01",
+        "note": "no early voting Oct 25; hours 7 a.m.-7 p.m. (11 a.m. start Oct 28-Nov 1)"
+      },
+      "mail": {
+        "requestBy": "2026-10-30",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "received by close of polls 8 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://elections.delaware.gov/elections/general/general.html",
+        "title": "General Election - Department of Elections - State of Delaware",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.delaware.gov/"
+    },
+    "FL": {
+      "name": "Florida",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "single printed deadline (29 days before)"
+      },
+      "earlyVoting": {
+        "start": "2026-10-24",
+        "end": "2026-10-31",
+        "note": "mandatory period; counties may add optional days"
+      },
+      "mail": {
+        "requestBy": "2026-10-22",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "received by 7:00 pm local time Election Day regardless of postmark"
+      },
+      "source": {
+        "url": "https://dos.fl.gov/elections/for-voters/election-dates/",
+        "title": "Election Dates - Division of Elections - Florida Department of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://dos.fl.gov/elections/"
+    },
+    "GA": {
+      "name": "Georgia",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "single printed deadline"
+      },
+      "earlyVoting": {
+        "start": "2026-10-13",
+        "end": "2026-10-30",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-23",
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Return deadline not printed on the official page; not verified"
+      },
+      "source": {
+        "url": "https://sos.ga.gov/november-3-2026-general-election",
+        "title": "November 3, 2026 General Election | Georgia Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.ga.gov/elections-division-georgia-secretary-states-office"
+    },
+    "HI": {
+      "name": "Hawaii",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-26",
+        "inPerson": null,
+        "sameDay": true,
+        "note": "Online registration has no printed cutoff; paper applications by Oct 26 (4:30 p.m.); same-day at voter service centers Oct 20 - Nov 3"
+      },
+      "earlyVoting": {
+        "start": "2026-10-20",
+        "end": "2026-11-03",
+        "note": "all-mail state; voter service centers (in-person voting + same-day registration) Oct 20 - Nov 3, excluding Sundays"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Ballots mailed to all registered voters; Oct 27 = deadline to request an alternate mailing address; received by 7:00 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://elections.hawaii.gov/newsletters/newsletter-october-2026/",
+        "title": "Office of Elections | Newsletter - October 2026",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.hawaii.gov/"
+    },
+    "ID": {
+      "name": "Idaho",
+      "registration": {
+        "online": "2026-10-23",
+        "mail": "2026-10-23",
+        "inPerson": "2026-10-23",
+        "sameDay": true,
+        "note": "Pre-registration ends Oct 23; same-day registration at early voting and on Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-13",
+        "end": "2026-10-30",
+        "note": "County start dates vary (most 10/13 or 10/19); some counties do not offer early voting."
+      },
+      "mail": {
+        "requestBy": "2026-10-23",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Ballot must be returned by 8 p.m. on Election Day; no postmark rule stated."
+      },
+      "source": {
+        "url": "https://voteidaho.gov/idaho-general-election/",
+        "title": "2026 Idaho General Election",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://voteidaho.gov/"
+    },
+    "IL": {
+      "name": "Illinois",
+      "registration": {
+        "online": "2026-10-18",
+        "mail": "2026-10-06",
+        "inPerson": "2026-10-06",
+        "sameDay": true,
+        "note": "Oct 6 = close of regular registration; grace-period registration and voting in person Oct 7 through Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-09-24",
+        "end": "2026-11-02",
+        "note": "Sept 24 start is at election authority offices; additional sites vary by election authority."
+      },
+      "mail": {
+        "requestBy": "2026-10-29",
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Oct 29 = last day for mailed applications; in person until Nov 2; return deadline not printed on the official page"
+      },
+      "source": {
+        "url": "https://www.elections.il.gov/agencyforms/1%20ELECTION%20CALENDAR/2026%20Abbreviated%20Calendar%207.7.2025%20Amended.pdf",
+        "title": "2026 Abbreviated Election Calendar (Amended 7.7.2025) - Illinois State Board of Elections",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.elections.il.gov/"
+    },
+    "IN": {
+      "name": "Indiana",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Online by midnight; in office by close of business Oct 5."
+      },
+      "earlyVoting": {
+        "start": "2026-10-06",
+        "end": "2026-11-02",
+        "note": "In-person absentee in circuit court clerk's office/satellite; ends noon Nov 2."
+      },
+      "mail": {
+        "requestBy": "2026-10-22",
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Application by 11:59 pm Oct 22. Ballot receipt deadline not printed in the calendar brochure; check source."
+      },
+      "source": {
+        "url": "https://www.in.gov/dA/a5aa6862f1/2026-Calendar-Brochure.FINAL-VERSION.pdf?language_id=1",
+        "title": "2026 Indiana Election Calendar (brochure PDF) - Indiana Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.in.gov/sos/elections/"
+    },
+    "IA": {
+      "name": "Iowa",
+      "registration": {
+        "online": "2026-10-19",
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": true,
+        "note": "Pre-registration deadline 5 p.m. Oct 19 (three-year calendar); Election Day registration with ID/proof of residence."
+      },
+      "earlyVoting": {
+        "start": "2026-10-14",
+        "end": "2026-11-02",
+        "note": "In-person absentee at county auditor's office."
+      },
+      "mail": {
+        "requestBy": "2026-10-19",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Mailed-ballot request received by 5 p.m. Oct 19; ballot received by 8 p.m. Election Day."
+      },
+      "source": {
+        "url": "https://sos.iowa.gov/news-resources/secretary-pate-encourages-iowans-make-plan-vote-2026-general-election",
+        "title": "Secretary Pate Encourages Iowans to Make a Plan to Vote in 2026 General Election",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.iowa.gov/"
+    },
+    "KS": {
+      "name": "Kansas",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-10-13",
+        "sameDay": false,
+        "note": null
+      },
+      "earlyVoting": {
+        "start": "2026-10-14",
+        "end": null,
+        "note": "Advance voting may begin Oct 14 and must begin in all counties by Oct 27; end date not printed"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Application deadline not printed on the official page; see source for ballot return rules"
+      },
+      "source": {
+        "url": "https://sos.ks.gov/elections/important-election-dates.html",
+        "title": "Important Election Dates - Kansas Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.ks.gov/elections/"
+    },
+    "KY": {
+      "name": "Kentucky",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Online by 4:00 PM local; mailed registrations may be postmarked 10/5; in office by close of business."
+      },
+      "earlyVoting": {
+        "start": "2026-10-29",
+        "end": "2026-10-31",
+        "note": "No-excuse in-person absentee Oct 29-31; excused in-person absentee Oct 21-23 and Oct 26-28."
+      },
+      "mail": {
+        "requestBy": "2026-10-20",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Portal closes Oct 20; mail-in ballots must be received by County Clerk before 6 p.m. Election Day."
+      },
+      "source": {
+        "url": "https://elect.ky.gov/Pages/default.aspx",
+        "title": "Kentucky State Board of Elections - home (2026 General Election key dates)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elect.ky.gov/"
+    },
+    "LA": {
+      "name": "Louisiana",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Nov 3, 2026 is styled an open primary in Louisiana; Dec 12, 2026 general/runoff has separate deadlines."
+      },
+      "earlyVoting": {
+        "start": "2026-10-20",
+        "end": "2026-10-27",
+        "note": "Excluding Sunday Oct 25; 8:30 a.m.-6 p.m."
+      },
+      "mail": {
+        "requestBy": "2026-10-30",
+        "returnBy": "2026-11-02",
+        "postmarkOk": false,
+        "note": "Request by 4:30 p.m. Oct 30; Registrar must receive voted ballot by 4:30 p.m. Nov 2 (military/overseas excepted)."
+      },
+      "source": {
+        "url": "https://www.sos.la.gov/elections-voting/election-dates",
+        "title": "Election Dates - Louisiana Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.la.gov/elections-voting"
+    },
+    "ME": {
+      "name": "Maine",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Mail/3rd-person received by close of business Oct 13; online 5 PM Oct 13; BMV Oct 27; in person through close of polls on Election Day."
+      },
+      "earlyVoting": {
+        "start": "2026-10-04",
+        "end": "2026-10-29",
+        "note": "In-person no-excuse absentee voting at municipal clerk's office (Oct 4 as printed, 30 days before); through close of business Oct 29."
+      },
+      "mail": {
+        "requestBy": "2026-10-29",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Received by 8 p.m. Election Day regardless of postmark."
+      },
+      "source": {
+        "url": "https://www.maine.gov/sos/news/general-election-two-months-away-secretary-states-office-provides-update-maine-election-1",
+        "title": "General Election is two months away; Secretary of State's Office provides update on Maine election processes",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.maine.gov/sos/elections-voting"
+    },
+    "MD": {
+      "name": "Maryland",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Mail postmarked by Oct 13; after Oct 13 register in person at early voting (Oct 22-29) or Election Day polling place."
+      },
+      "earlyVoting": {
+        "start": "2026-10-22",
+        "end": "2026-10-29",
+        "note": "7 am-8 pm."
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Oct 27 for ballot delivered by mail/fax; Oct 30 for online (download/print) delivery; in person until 8 pm Nov 3."
+      },
+      "source": {
+        "url": "https://elections.maryland.gov/elections/2026/vote2026/",
+        "title": "Maryland General Election Information (vote2026)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.maryland.gov/"
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "registration": {
+        "online": "2026-10-24",
+        "mail": "2026-10-24",
+        "inPerson": "2026-10-24",
+        "sameDay": false,
+        "note": "Online by 11:59 p.m.; mail postmarked by Oct 24 (registering-to-vote page rules)."
+      },
+      "earlyVoting": {
+        "start": "2026-10-17",
+        "end": "2026-10-30",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Application must reach local election office by 5 p.m. Oct 27; mailed ballots postmarked by Election Day and received by Nov 6 are counted."
+      },
+      "source": {
+        "url": "https://www.sec.state.ma.us/divisions/elections/recent-updates/upcoming-elections.htm",
+        "title": "Upcoming Elections - Secretary of the Commonwealth of Massachusetts",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sec.state.ma.us/divisions/elections/"
+    },
+    "MI": {
+      "name": "Michigan",
+      "registration": {
+        "online": "2026-10-19",
+        "mail": "2026-10-19",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Mail applications received or postmarked by Oct 19; from Oct 20 through Election Day register in person at the local clerk"
+      },
+      "earlyVoting": {
+        "start": "2026-10-24",
+        "end": "2026-11-01",
+        "note": "Constitutionally-mandated period; communities may offer additional days."
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Application and return deadlines not printed on the official page"
+      },
+      "source": {
+        "url": "https://www.michigan.gov/sos/elections",
+        "title": "Elections",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.michigan.gov/sos/elections"
+    },
+    "MN": {
+      "name": "Minnesota",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-10-13",
+        "sameDay": true,
+        "note": "Oct. 13 is the pre-registration deadline for all methods; Election Day registration at the polling place is available."
+      },
+      "earlyVoting": {
+        "start": "2026-09-18",
+        "end": "2026-11-02",
+        "note": "Absentee voting in person or by mail; end date from the SOS 2026 elections calendar"
+      },
+      "mail": {
+        "requestBy": "2026-11-02",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Nov 2 = last day to apply; ballots must arrive by Election Day (in person 5:00 p.m., by mail 8:00 p.m.)"
+      },
+      "source": {
+        "url": "https://www.sos.mn.gov/about-the-office/news-room/secretary-simon-highlights-2026-election-dates/",
+        "title": "Secretary Simon Highlights 2026 Election Dates",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.mn.gov/"
+    },
+    "MS": {
+      "name": "Mississippi",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Official pages list only in-person and mail (postmark) deadlines; no online registration deadline printed."
+      },
+      "earlyVoting": {
+        "start": "2026-09-21",
+        "end": "2026-10-31",
+        "note": "In-person absentee at the Circuit Clerk's office (excuse required); Saturday hours Oct 24 and Oct 31"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Application deadline not printed; mail ballots postmarked by Election Day and received within 5 business days (Nov 10, 5:00 p.m.)"
+      },
+      "source": {
+        "url": "https://www.sos.ms.gov/content/documents/elections/2026%20Elections%20Calendar.pdf",
+        "title": "Mississippi Secretary of State's Office 2026 Elections Calendar (Last Revised 9/8/2026)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.ms.gov/elections-voting"
+    },
+    "MO": {
+      "name": "Missouri",
+      "registration": {
+        "online": "2026-10-07",
+        "mail": "2026-10-07",
+        "inPerson": "2026-10-07",
+        "sameDay": false,
+        "note": "Single printed deadline (Oct 7); mailed forms must be postmarked by the 4th Wednesday before the election"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "No-excuse in-person absentee runs from the 2nd Tuesday before the election to the day before; no 2026 dates printed"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Mail/fax requests due 5:00 p.m. the 2nd Wednesday before the election (no date printed); ballots received by close of polls"
+      },
+      "source": {
+        "url": "https://www.sos.mo.gov/elections/calendar",
+        "title": "2026 Missouri Election Calendar",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.mo.gov/elections"
+    },
+    "MT": {
+      "name": "Montana",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-05",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "No online registration deadline listed; regular registration closes Oct 5 (postmark); late registration in person Oct 6 - Oct 31 and until 8:00 p.m. on Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-05",
+        "end": null,
+        "note": "In-person absentee at county election offices from Oct 5; end date not printed (apply before noon the day before the election)"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Absentee ballots mailed by Oct 9; request and return deadlines not printed on the official calendar"
+      },
+      "source": {
+        "url": "https://sosmt.gov/wp-content/uploads/wpfd/preview_files/2026-Federal-Election-Calendar(6fec86338c652319befedd4fd798de5b).pdf",
+        "title": "2026 Primary and General Election Calendar - Montana Secretary of State (Updated September 2026)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sosmt.gov/elections/"
+    },
+    "NE": {
+      "name": "Nebraska",
+      "registration": {
+        "online": "2026-10-16",
+        "mail": "2026-10-16",
+        "inPerson": "2026-10-23",
+        "sameDay": false,
+        "note": "Online by midnight Oct. 16; mail postmarked by Oct. 16; in person at the county election office by 6 PM Oct. 23."
+      },
+      "earlyVoting": {
+        "start": "2026-10-05",
+        "end": "2026-11-02",
+        "note": "In-person early voting at the county clerk or election commissioner office."
+      },
+      "mail": {
+        "requestBy": "2026-10-23",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Request for a mailed early voting ballot by 6 PM Oct. 23; ballot must be in the county office by 8 PM CT (7 PM MT) on Election Day."
+      },
+      "source": {
+        "url": "https://sos.nebraska.gov/sites/default/files/doc/elections/2026/2026_Election_Calendar.pdf",
+        "title": "2026 Official Election Calendar - State of Nebraska",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.nebraska.gov/elections-division"
+    },
+    "NV": {
+      "name": "Nevada",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": null,
+        "sameDay": true,
+        "note": "Official site could not be read when checked; vote.gov rule: online 5 days before Election Day, mail postmarked 28 days before"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Official site could not be read when checked; not verified"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Official site could not be read when checked; not verified"
+      },
+      "source": {
+        "url": "https://vote.gov/register/nv/",
+        "title": "How to register in Nevada | Vote.gov",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.nvsos.gov/elections"
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": null,
+        "sameDay": true,
+        "note": "Official site could not be read when checked; vote.gov: no online registration; mail only in special cases (received 13 days before); in person through Election Day"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Official site could not be read when checked; not verified"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Official site could not be read when checked; not verified"
+      },
+      "source": {
+        "url": "https://vote.gov/register/nh/",
+        "title": "How to register in New Hampshire | Vote.gov",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.nh.gov/elections"
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-10-13",
+        "sameDay": false,
+        "note": "Single deadline (21 days before) for all methods; evening registration 4-9 p.m. Oct 13 at county offices"
+      },
+      "earlyVoting": {
+        "start": "2026-10-24",
+        "end": "2026-11-01",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Apply by mail by Oct 27, in person until 3:00 p.m. Nov 2; mailed ballots postmarked by Nov 3 and received by Nov 9; drop box by 8:00 p.m. Nov 3"
+      },
+      "source": {
+        "url": "https://www.nj.gov/state/elections/assets/pdf/chrons/2026-chron-general-election-0109.pdf",
+        "title": "2026 General Election Timeline (Updated on January 9, 2026)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.nj.gov/state/elections/"
+    },
+    "NM": {
+      "name": "New Mexico",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Regular registration closes 28 days before the election (no date printed); same-day registration during early voting and on Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-06",
+        "end": "2026-10-31",
+        "note": "County clerk offices from Oct. 6; additional early voting sites open Oct. 17."
+      },
+      "mail": {
+        "requestBy": "2026-10-20",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Application must be received by the county clerk by Oct. 20; ballots must be received by 7:00 p.m. on Election Day."
+      },
+      "source": {
+        "url": "https://www.sos.nm.gov/goodquestions/",
+        "title": "Good Questions | Maggie Toulouse Oliver - New Mexico Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.nm.gov/voting-and-elections/"
+    },
+    "NY": {
+      "name": "New York",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-24",
+        "inPerson": "2026-10-24",
+        "sameDay": false,
+        "note": "Page prints Oct 24, 2026 for mail and in-person registration only; online portal deadline not printed separately"
+      },
+      "earlyVoting": {
+        "start": "2026-10-24",
+        "end": "2026-11-01",
+        "note": null
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Early mail applications must be received 10 days before the election (in person: the day before); postmarked ballots must reach the board by Nov 10"
+      },
+      "source": {
+        "url": "https://elections.ny.gov/registration-and-voting-deadlines",
+        "title": "Registration and Voting Deadlines | New York State Board of Elections",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.ny.gov/"
+    },
+    "NC": {
+      "name": "North Carolina",
+      "registration": {
+        "online": "2026-10-09",
+        "mail": "2026-10-09",
+        "inPerson": "2026-10-09",
+        "sameDay": true,
+        "note": "Single deadline printed (5 p.m.); same-day registration during early voting"
+      },
+      "earlyVoting": {
+        "start": "2026-10-15",
+        "end": "2026-10-31",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-20",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Received by 7:30 p.m. Election Day; no postmark grace period"
+      },
+      "source": {
+        "url": "https://www.ncsbe.gov/voting/upcoming-election",
+        "title": "Upcoming Election | NCSBE",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.ncsbe.gov/"
+    },
+    "ND": {
+      "name": "North Dakota",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": null,
+        "sameDay": false,
+        "note": "North Dakota has no voter registration; voters show ID at the polls"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "County option: early voting up to 15 days before Election Day; no statewide dates"
+      },
+      "mail": {
+        "requestBy": "2026-11-02",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Ballots must be RECEIVED by county auditor by close of polls on Election Day (SOS media guide)"
+      },
+      "source": {
+        "url": "https://www.sos.nd.gov/elections/voter/elections-currentpast",
+        "title": "Elections - Current/Past | Secretary of State | North Dakota",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.nd.gov/elections"
+    },
+    "OH": {
+      "name": "Ohio",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Single deadline printed for all methods"
+      },
+      "earlyVoting": {
+        "start": "2026-10-06",
+        "end": "2026-11-01",
+        "note": "End date from the last listed early in-person voting hours entry (November 1: 1 p.m. to 5 p.m.)"
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Non-UOCAVA absentee ballots must be received by 7:30 PM Election Day"
+      },
+      "source": {
+        "url": "https://www.ohiosos.gov/elections/voting-schedule-text-only",
+        "title": "Voting Calendar | When Voting Occurs in Ohio - text only",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.ohiosos.gov/elections"
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "registration": {
+        "online": "2026-10-09",
+        "mail": "2026-10-09",
+        "inPerson": "2026-10-09",
+        "sameDay": false,
+        "note": "Single deadline printed; mailed applications must be postmarked by Oct 9 (newsroom page)"
+      },
+      "earlyVoting": {
+        "start": "2026-10-28",
+        "end": "2026-10-31",
+        "note": "In-person absentee voting at county election boards"
+      },
+      "mail": {
+        "requestBy": "2026-10-19",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Mailed ballots received by the County Election Board by 7:00 p.m. election night"
+      },
+      "source": {
+        "url": "https://oklahoma.gov/elections/elections-results/next-election/voter-information-calendar.html",
+        "title": "Voter Information Calendar",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://oklahoma.gov/elections.html"
+    },
+    "OR": {
+      "name": "Oregon",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-10-13",
+        "sameDay": false,
+        "note": "Single deadline printed for all methods"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "All-mail state; ballots mailed from Oct 14; return in person to the county elections office by 8 p.m. on Election Day"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Ballots mailed to all active registered voters; postmarked ballots may be received up to 7 days after Election Day"
+      },
+      "source": {
+        "url": "https://sos.oregon.gov/elections/pages/current-election.aspx",
+        "title": "Oregon Secretary of State : Upcoming Elections : State of Oregon",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.oregon.gov/voting-elections/Pages/default.aspx"
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "registration": {
+        "online": "2026-10-19",
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": false,
+        "note": "Single deadline printed for all methods"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "No early voting dates printed on the official page"
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Must be received by county election office by 8:00 P.M."
+      },
+      "source": {
+        "url": "https://www.pa.gov/agencies/vote/elections/upcoming-elections",
+        "title": "Upcoming Elections | Voting & Election Information | Commonwealth of Pennsylvania",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.pa.gov/agencies/vote"
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "registration": {
+        "online": "2026-10-04",
+        "mail": "2026-10-04",
+        "inPerson": "2026-10-04",
+        "sameDay": false,
+        "note": "Single deadline printed (10/4/26); same-day registration applies only in presidential election years"
+      },
+      "earlyVoting": {
+        "start": "2026-10-14",
+        "end": null,
+        "note": "End date not printed; early voting runs during the 20 days before Election Day"
+      },
+      "mail": {
+        "requestBy": "2026-10-13",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Application date marked as an unofficial proposed schedule; emergency ballots until 4 p.m. the day before; received by 8:00 p.m. election night"
+      },
+      "source": {
+        "url": "https://elections.ri.gov/elections/upcoming-elections",
+        "title": "Upcoming Elections | Board of Elections",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.ri.gov/"
+    },
+    "SC": {
+      "name": "South Carolina",
+      "registration": {
+        "online": "2026-10-04",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-02",
+        "sameDay": false,
+        "note": "Mail = postmark; in person: most county offices close 5:00 p.m. Friday, Oct 2"
+      },
+      "earlyVoting": {
+        "start": "2026-10-19",
+        "end": "2026-10-31",
+        "note": "Closed Sunday, October 25"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Application deadline printed only as a rule: 5:00 p.m. on the 11th day before the election"
+      },
+      "source": {
+        "url": "https://scvotes.gov/voters/2026prep/",
+        "title": "Prep for the 2026 Statewide General Election - SC Votes - South Carolina Election Commission",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://scvotes.gov/"
+    },
+    "SD": {
+      "name": "South Dakota",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": false,
+        "note": "no online registration; register by 5:00 p.m. local time"
+      },
+      "earlyVoting": {
+        "start": "2026-09-18",
+        "end": null,
+        "note": "In-person absentee at the county auditor; ends 5:00 p.m. the day before Election Day (no date printed)"
+      },
+      "mail": {
+        "requestBy": "2026-11-02",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Request before 5:00 p.m. Nov 2; ballots delivered after polls close are not counted"
+      },
+      "source": {
+        "url": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Election%20Information/default.aspx",
+        "title": "Upcoming Elections: South Dakota Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sdsos.gov/elections-voting/"
+    },
+    "TN": {
+      "name": "Tennessee",
+      "registration": {
+        "online": "2026-10-05",
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "Single deadline printed for all methods"
+      },
+      "earlyVoting": {
+        "start": "2026-10-14",
+        "end": "2026-10-29",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-24",
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Must be received by the county election commission by close of polls on Election Day (no date printed)"
+      },
+      "source": {
+        "url": "https://sos.tn.gov/elections/calendar",
+        "title": "Elections Calendar | Tennessee Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.tn.gov/elections"
+    },
+    "TX": {
+      "name": "Texas",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-05",
+        "inPerson": "2026-10-05",
+        "sameDay": false,
+        "note": "no online registration"
+      },
+      "earlyVoting": {
+        "start": "2026-10-19",
+        "end": "2026-10-30",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-23",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Received by 7:00 p.m. Election Day, or by 5:00 p.m. Nov 4 if postmarked by 7 p.m. Election Day; applications received by Oct 23"
+      },
+      "source": {
+        "url": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml",
+        "title": "Important Election Dates",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.votetexas.gov/"
+    },
+    "UT": {
+      "name": "Utah",
+      "registration": {
+        "online": "2026-10-23",
+        "mail": "2026-10-23",
+        "inPerson": "2026-10-23",
+        "sameDay": true,
+        "note": "Received by the county clerk by 5 p.m. Oct 23; same-day registration in person at a vote center with two forms of ID"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Official calendar marks early voting from Oct 20 without a printed date; contact your county clerk"
+      },
+      "mail": {
+        "requestBy": "2026-10-27",
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Ballots mailed to all active voters Oct 13; 2026 return deadline not printed on the official page"
+      },
+      "source": {
+        "url": "https://vote.utah.gov/current-election-information/",
+        "title": "Current Election Information - Utah Voter Information",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://vote.utah.gov/"
+    },
+    "VT": {
+      "name": "Vermont",
+      "registration": {
+        "online": null,
+        "mail": null,
+        "inPerson": null,
+        "sameDay": true,
+        "note": "No registration deadline; register any time including Election Day (SOS voting rights page)"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "Early voting begins 45 days before the election or when ballots are available; no date printed; contact your town clerk"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Ballots mailed to all active voters by Oct 7; must reach the clerk or polling place before 7 p.m. on Election Day"
+      },
+      "source": {
+        "url": "https://sos.vermont.gov/elections/voters/early-absentee-voting",
+        "title": "Early & Absentee Voting | Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.vermont.gov/elections/voters"
+    },
+    "VA": {
+      "name": "Virginia",
+      "registration": {
+        "online": "2026-10-23",
+        "mail": "2026-10-23",
+        "inPerson": "2026-10-23",
+        "sameDay": true,
+        "note": "After Oct 23 through Election Day voters may register and vote in person with a provisional ballot"
+      },
+      "earlyVoting": {
+        "start": "2026-09-18",
+        "end": "2026-10-31",
+        "note": "ends 5:00 p.m. Oct 31"
+      },
+      "mail": {
+        "requestBy": "2026-10-23",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Postmarked by Nov 3 and received by noon Nov 6, 2026 (news release); request deadline 5:00 p.m. Oct 23"
+      },
+      "source": {
+        "url": "https://www.elections.virginia.gov/casting-a-ballot/calendars-schedules/upcoming-elections.html",
+        "title": "Upcoming Elections",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.elections.virginia.gov/"
+    },
+    "WA": {
+      "name": "Washington",
+      "registration": {
+        "online": "2026-10-26",
+        "mail": "2026-10-26",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Online/mail registrations must be RECEIVED by Oct 26; in person through 8:00 p.m. Election Day"
+      },
+      "earlyVoting": {
+        "start": null,
+        "end": null,
+        "note": "All-mail state; 18-day voting period begins Oct 16 with accessible voting at county voting centers"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Ballots mailed to all voters by Oct 16; return to a drop box by 8 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://www.sos.wa.gov/elections/elections-calendar/dates-and-deadlines",
+        "title": "Dates and Deadlines 2026",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.sos.wa.gov/elections"
+    },
+    "WV": {
+      "name": "West Virginia",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-10-13",
+        "sameDay": false,
+        "note": "Single deadline printed; mail applications must be received/accepted by close of registration (calendar)"
+      },
+      "earlyVoting": {
+        "start": "2026-10-21",
+        "end": "2026-10-31",
+        "note": null
+      },
+      "mail": {
+        "requestBy": "2026-10-28",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Postmarked by Election Day accepted through Nov 9; unpostmarked by Nov 4; hand-delivery to the clerk by Nov 2"
+      },
+      "source": {
+        "url": "https://sos.wv.gov/govotewv",
+        "title": "GoVoteWV | WV Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.wv.gov/elections"
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "registration": {
+        "online": "2026-10-14",
+        "mail": "2026-10-14",
+        "inPerson": "2026-10-30",
+        "sameDay": true,
+        "note": "Mail = postmarked by Oct 14; in person at municipal clerk until 5:00 p.m. Oct 30; Election Day registration at polling place"
+      },
+      "earlyVoting": {
+        "start": "2026-10-20",
+        "end": "2026-11-01",
+        "note": "In-person absentee at municipal clerk; end date and hours vary by municipality ('possibly through November 1')"
+      },
+      "mail": {
+        "requestBy": "2026-10-29",
+        "returnBy": "2026-11-03",
+        "postmarkOk": false,
+        "note": "Request by 5:00 p.m. Oct 29 (regular voters); ballot must be RECEIVED by clerk by 8:00 p.m. Election Day"
+      },
+      "source": {
+        "url": "https://myvote.wi.gov/en-us/Voter-Deadlines",
+        "title": "DEADLINES FOR ELECTIONS",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://elections.wi.gov/"
+    },
+    "WY": {
+      "name": "Wyoming",
+      "registration": {
+        "online": null,
+        "mail": "2026-10-19",
+        "inPerson": "2026-10-19",
+        "sameDay": true,
+        "note": "No online registration; after Oct 19 register in person and vote absentee Oct 20 - Nov 2, or register and vote at the polls"
+      },
+      "earlyVoting": {
+        "start": "2026-10-06",
+        "end": "2026-11-02",
+        "note": "Wyoming calls this in-person absentee voting at the county clerk"
+      },
+      "mail": {
+        "requestBy": null,
+        "returnBy": null,
+        "postmarkOk": false,
+        "note": "Request any time before Election Day; return to the County Clerk by 7 p.m. on Election Day (no date printed)"
+      },
+      "source": {
+        "url": "https://sos.wyo.gov/Elections/Docs/2026/2026_Key_Election_Dates.pdf",
+        "title": "2026 Key Election Dates - Wyoming Secretary of State",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://sos.wyo.gov/Elections/"
+    },
+    "DC": {
+      "name": "Washington D.C.",
+      "registration": {
+        "online": "2026-10-13",
+        "mail": "2026-10-13",
+        "inPerson": "2026-11-03",
+        "sameDay": true,
+        "note": "Online/mail applications received by Oct 13; in person at Early Vote Centers Oct 26 - Nov 1 and on Election Day"
+      },
+      "earlyVoting": {
+        "start": "2026-10-26",
+        "end": "2026-11-01",
+        "note": "8:30 a.m.-7:00 p.m. daily"
+      },
+      "mail": {
+        "requestBy": "2026-10-19",
+        "returnBy": "2026-11-03",
+        "postmarkOk": true,
+        "note": "Ballots mailed to all registered voters; drop box by 8:00 p.m. Nov 3; postmarked by Election Day accepted if received by Nov 13; calendar subject to change"
+      },
+      "source": {
+        "url": "https://dcboe.org/getmedia/4d04f4a1-fb2a-4f8a-809f-d3f708f232df/2026-General-Election-Calendar-Version-08072025.pdf",
+        "title": "November 3, 2026 General Election Calendar of Important Dates (DC Board of Elections)",
+        "checkedOn": "2026-10-13"
+      },
+      "officialUrl": "https://www.dcboe.org/"
+    }
+  }
+}
