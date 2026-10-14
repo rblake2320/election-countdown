@@ -1,4 +1,6 @@
 import { computeDailyRollup, readRollups, isDay } from "../../lib/analytics.js";
+import { LIVE_PROFILE_SCHEMA, readLiveProfile, publicLiveProfile, privateLiveProfile, saveLiveProfile } from "../../lib/live-profile.js";
+import { avatarPng, avatarStream } from "../../lib/avatar-image.js";
 import {
   OAUTH_COOKIE, OAuthError, clearOAuthCookie, enabledProviders, fetchVerifiedProfile,
   providerConfig, readOAuthCookie, safeReturnTo, startAuthorization
@@ -25,6 +27,8 @@ let schemaReady = false;
 // Fixed-window limits per client (IP) or per user. Pages on *.pages.dev has no zone WAF,
 // so abuse limits live here.
 const RATE_LIMITS = {
+  liveProfile: { limit: 120, windowMinutes: 60 },
+  liveImage: { limit: 120, windowMinutes: 1 },
   register: { limit: 5, windowMinutes: 60 },
   login: { limit: 20, windowMinutes: 15 },
   intent: { limit: 30, windowMinutes: 60 },
@@ -60,6 +64,35 @@ export async function onRequest(context) {
     }
 
     if (path === "/health" && request.method === "GET") return health(request, env);
+    if (path === "/time" && request.method === "GET") return json({ serverNowMs: Date.now() });
+    if (path === "/account/live-profile" && request.method === "GET") {
+      return user ? json(privateLiveProfile(await readLiveProfile(env, user.id))) : json({ message: "Sign in required" }, 401);
+    }
+    if (path === "/account/live-profile" && request.method === "PUT") {
+      return await csrfProtected(request, async () => {
+        if (!user) return json({ message: "Sign in required" }, 401);
+        const limited = await rateLimited(request, env, "liveProfile", "user:" + user.id);
+        if (limited) return limited;
+        const result = await saveLiveProfile(env, user.id, await readJson(request));
+        return json(result.body, result.status);
+      });
+    }
+    const liveMatch = path.match(/^\/live-profiles\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})(\.(?:stream|png))?$/);
+    if (liveMatch && request.method === "GET") {
+      if (liveMatch[2]) {
+        const limited = await rateLimited(request, env, "liveImage");
+        if (limited) return limited;
+      }
+      const row = await env.DB.prepare("SELECT * FROM live_profiles WHERE public_id = ? AND enabled = 1").bind(liveMatch[1]).first();
+      if (!row) return json({ message: "Live profile unavailable" }, 404);
+      const state = publicLiveProfile(row);
+      if (liveMatch[2] === ".png") return new Response(await avatarPng(state), {headers: {"content-type":"image/png", "cache-control":"no-store", "x-content-type-options":"nosniff"}});
+      if (liveMatch[2] === ".stream") return avatarStream(state, async () => {
+        const current = await env.DB.prepare("SELECT * FROM live_profiles WHERE public_id = ? AND enabled = 1").bind(liveMatch[1]).first();
+        return current ? publicLiveProfile(current) : null;
+      });
+      return json(state);
+    }
     if ((path === "/auth/user" || path === "/auth/me" || path === "/auth/session" || path === "/me") && request.method === "GET") return json(user);
     if (path === "/auth/register" && request.method === "POST") {
       return (await rateLimited(request, env, "register")) || register(request, env);
@@ -157,6 +190,7 @@ function health(request, env) {
 async function ensureSchema(env) {
   if (schemaReady) return;
   const statements = [
+    LIVE_PROFILE_SCHEMA,
     `CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       ec_id TEXT NOT NULL UNIQUE,
@@ -463,6 +497,7 @@ async function deleteAccount(request, user, env) {
   await env.DB.batch([
     env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM oauth_accounts WHERE user_id = ?").bind(user.id),
+    env.DB.prepare("DELETE FROM live_profiles WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM verification_events WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM donations WHERE user_id = ?").bind(user.id),
     env.DB.prepare("DELETE FROM vote_intent_history WHERE user_id = ?").bind(user.id),

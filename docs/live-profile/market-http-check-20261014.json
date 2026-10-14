@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-14T22:52:27.1027456Z",
+  "method": "GET",
+  "url": "https://electionclock.com/live-avatar?id=d7d3e530-9b0b-4b54-a162-31dbc7445f3a",
+  "status": 200,
+  "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors *",
+  "xFrameOptions": "",
+  "cacheControl": "no-store",
+  "scope": "Public endpoint headers only; no third-party platform installation"
+}

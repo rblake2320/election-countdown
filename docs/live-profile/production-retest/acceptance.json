@@ -1,0 +1,71 @@
+{
+  "started": "2026-10-14T17:29:53.881Z",
+  "profileUrl": "https://aihangout.ai/profile/live_countdown_test",
+  "postUrl": "https://aihangout.ai/problem/290",
+  "checks": [
+    {
+      "name": "Existing test question and answer predate this deployment verification",
+      "result": "Worked",
+      "questionCreated": "2026-10-14 16:59:08",
+      "answerCreated": "2026-10-14 16:59:10",
+      "answerId": 179
+    },
+    {
+      "name": "Public profile visibly ticks in the deployed application",
+      "result": "Worked",
+      "uniqueFrames": 3,
+      "samples": 4
+    },
+    {
+      "name": "Earlier question and answer both visibly tick",
+      "result": "Worked",
+      "question": {
+        "uniqueFrames": 3,
+        "samples": 4
+      },
+      "answer": {
+        "uniqueFrames": 4,
+        "samples": 4
+      }
+    },
+    {
+      "name": "Three public viewers share the current countdown despite different device zones",
+      "result": "Worked",
+      "remaining": [
+        1682972,
+        1682972,
+        1682972
+      ],
+      "clockSpreadMs": 39.000244140625
+    },
+    {
+      "name": "Logged-out visitor sees live avatars on the earlier question and answer",
+      "result": "Worked"
+    },
+    {
+      "name": "Owner zone update reaches already-open avatars without changing the deadline",
+      "result": "Worked",
+      "ownerZone": "America/New_York",
+      "deadline": 1793682000000,
+      "observedWithinMs": 11233.839
+    },
+    {
+      "name": "Removing and relinking through settings updates both older placements",
+      "result": "Worked"
+    },
+    {
+      "name": "35-second network outage falls back to initials and recovers to a ticking older answer",
+      "result": "Worked",
+      "uniqueFrames": 3,
+      "samples": 4
+    },
+    {
+      "name": "Fresh authenticated countdown settings renders a live owner preview",
+      "result": "Worked"
+    }
+  ],
+  "errors": [],
+  "result": "Worked",
+  "restoration": "Worked",
+  "finished": "2026-10-14T17:31:29.971Z"
+}

@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-10-14T16:41:19.5767723Z",
+  "query": "Present PnP Android/Motorola/iPhone/MTP/Pixel/Samsung devices excluding DiskDrive",
+  "devices": [],
+  "adbAvailable": false,
+  "result": "Blocked",
+  "required": "Three accessible physical phones and owner-controlled zone/travel test"
+}

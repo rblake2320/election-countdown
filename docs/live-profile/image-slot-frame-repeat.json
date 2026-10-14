@@ -1,0 +1,7 @@
+{
+  "base": "http://127.0.0.1:8910",
+  "started": "2026-10-14T16:29:55.637Z",
+  "checks": [],
+  "result": "Failed",
+  "failure": "AssertionError [ERR_ASSERTION]: All six visible image frames must change without JavaScript\n\n5 !== 6\n\n    at file:///D:/OneDrive/Documents/ChatGPT/motion%20%20pdrofile/election-countdown/tests/e2e/image-slot.mjs:27:10"
+}

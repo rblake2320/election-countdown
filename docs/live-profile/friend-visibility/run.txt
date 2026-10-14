@@ -1,0 +1,6 @@
+PASS Two distinct viewer accounts: mutual follow and no relationship
+PASS Friend and nonfriend see ticking avatars on profile, existing question and answer
+PASS Owner zone change visibly reaches all six mounted avatars without reloading
+PASS Turning the owner countdown off removes live images for both relationships
+PASS Turning it back on restores both viewers without page reload
+PASS Friend and nonfriend relationships remain distinct after the display changes

@@ -1,0 +1,56 @@
+{
+  "started": "2026-10-14T11:16:23.303Z",
+  "base": "http://127.0.0.1:8898",
+  "checks": [
+    {
+      "name": "Authentication, CSRF, malformed input, public-data minimization and owner isolation",
+      "result": "Worked",
+      "targetUtc": "2026-11-03T05:00:00.000Z"
+    },
+    {
+      "name": "Stale retries, reporter handover and concurrent compare-and-swap",
+      "result": "Worked",
+      "version": 3
+    },
+    {
+      "name": "Three viewers, late join, different zones and +5-minute device clock",
+      "result": "Worked",
+      "clockSpreadMs": 45.050048828125,
+      "remainingSeconds": [
+        1705414,
+        1705414,
+        1705414
+      ]
+    },
+    {
+      "name": "30-second renderer freeze and immediate catch-up",
+      "result": "Worked",
+      "remainingSeconds": [
+        1705384,
+        1705384
+      ]
+    },
+    {
+      "name": "Owner zone propagates to all viewers without moving deadline",
+      "result": "Worked",
+      "latencyMs": 4922.405999999999,
+      "zone": "America/New_York"
+    },
+    {
+      "name": "Cross-origin iframe and historical-placement fixture",
+      "result": "Worked",
+      "screenshot": "docs/live-profile/cross-origin-placements.png",
+      "hosting": "separate local origin; not production AIHangout"
+    },
+    {
+      "name": "Circular avatar at 32, 40, 64 and 128 pixels",
+      "result": "Worked",
+      "overflowPixels": 0
+    }
+  ],
+  "errors": [],
+  "result": "Failed",
+  "failure": "cdpSession.send: Protocol error (Emulation.setTimezoneOverride): Timezone override is already in effect\n    at D:\\OneDrive\\Documents\\ChatGPT\\motion  pdrofile\\election-countdown\\tests\\e2e\\live-profile.mjs:129:21",
+  "finished": "2026-10-14T11:17:01.581Z",
+  "browser": "145.0.7632.6"
+}

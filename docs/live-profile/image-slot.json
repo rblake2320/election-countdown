@@ -1,0 +1,29 @@
+{
+  "base": "http://127.0.0.1:8899",
+  "started": "2026-10-14T11:22:04.712Z",
+  "checks": [
+    {
+      "name": "Plain cross-origin image with JavaScript disabled",
+      "result": "Worked",
+      "browser": "145.0.7632.6",
+      "uniqueFrames": 6,
+      "hashes": [
+        "b66f79efcd2db4be4bce398595da8516dca6f03e67105bc3dd78330600dc2014",
+        "0e6c7fed96d7f10ba15f70f3868171e5139b7d8eee672e9698782628df9db8fa",
+        "b9f090cfc93f34a66ece81a6259295d41d994a5dc9e70c949c78a550ed837f0c",
+        "6270e787e523967c4b72953018de8f519a9ec58592d6b10c461fc296fad5cef9",
+        "da717268d52152f6f4ab96bbdbf1c4a5c160d21802c74775a0441aa73c86e1b5",
+        "7ccd71ee59f4c5f78314f50af0068b8bb0191bd5704f5a2e952c952ffc068562"
+      ]
+    },
+    {
+      "name": "One-minute frame delivery and client cancellation",
+      "result": "Worked",
+      "frames": 60,
+      "bytes": 69243,
+      "maxFrameAgeMs": 7,
+      "durationMs": 60242.5756
+    }
+  ],
+  "result": "Worked"
+}

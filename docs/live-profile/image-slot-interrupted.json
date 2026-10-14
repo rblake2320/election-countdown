@@ -1,0 +1,22 @@
+{
+  "base": "http://127.0.0.1:63637",
+  "started": "2026-10-14T16:28:00.298Z",
+  "checks": [
+    {
+      "name": "Plain cross-origin image with JavaScript disabled",
+      "result": "Worked",
+      "browser": "145.0.7632.6",
+      "uniqueFrames": 6,
+      "hashes": [
+        "c8abaffbd14f954b81852fa601e783e9527b772ae1ca5ecb3e43549f51cbeb1f",
+        "3b5f1e2d08442d35f52d1af4c6185702e68f888bfe25cb0e5dfb908f9f291c68",
+        "4a99cfa4dbcdfe4be38774a950900491acaeb5897d658aecc7e359e9531668c3",
+        "9af0b73423d261d33d8260a51058b26188399f124afe2d33ca74f37f46c85446",
+        "3834b83c6ba3f269ad09914bbae35197386c9e28e15a6cdc01c2d5fabdf2c8b0",
+        "01b5f4e4d636c282570cf794669f1d6ccb6db0f07ecb3db637f9be12943cd939"
+      ]
+    }
+  ],
+  "result": "Failed",
+  "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(frames>=55)\n\n    at file:///D:/OneDrive/Documents/ChatGPT/motion%20%20pdrofile/election-countdown/tests/e2e/image-slot.mjs:48:10\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+}

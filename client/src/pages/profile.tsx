@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { ArrowLeft, DollarSign, History, LogOut, Share2, ShieldCheck, ShieldAlert, Trash2, Vote } from "lucide-react";
 import { ShareTimestamp } from "@/components/share-timestamp";
+import { LiveProfileSettings } from "@/components/live-profile-settings";
 import { VoteIntentForm } from "@/components/vote-intent-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,6 +120,7 @@ export default function Profile() {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 md:p-6 space-y-6">
+        <LiveProfileSettings />
         <Card data-testid="card-account-details">
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">

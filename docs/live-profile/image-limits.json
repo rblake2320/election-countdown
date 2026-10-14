@@ -1,0 +1,7 @@
+{
+  "result": "Worked",
+  "attempts": 122,
+  "denied": 1,
+  "otherClient": "Worked",
+  "description": "Real local D1-backed read rate limit and independent active control"
+}

@@ -9,7 +9,8 @@
     "build": "node scripts/publish-build.mjs",
     "build:site": "node scripts/publish-build.mjs",
     "check": "tsc",
-    "test:e2e": "node tests/run-e2e.mjs"
+    "test:e2e": "node tests/run-e2e.mjs",
+    "test:live-profile": "node tests/run-live-profile.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

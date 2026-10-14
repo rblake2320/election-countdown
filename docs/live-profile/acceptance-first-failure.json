@@ -1,0 +1,45 @@
+{
+  "started": "2026-10-14T11:14:53.574Z",
+  "base": "http://127.0.0.1:8898",
+  "checks": [
+    {
+      "name": "Authentication, CSRF, malformed input, public-data minimization and owner isolation",
+      "result": "Worked",
+      "targetUtc": "2026-11-03T05:00:00.000Z"
+    },
+    {
+      "name": "Stale retries, reporter handover and concurrent compare-and-swap",
+      "result": "Worked",
+      "version": 3
+    },
+    {
+      "name": "Three viewers, late join, different zones and +5-minute device clock",
+      "result": "Worked",
+      "clockSpreadMs": 43.35009765625,
+      "remainingSeconds": [
+        1705504,
+        1705504,
+        1705504
+      ]
+    },
+    {
+      "name": "30-second renderer freeze and immediate catch-up",
+      "result": "Worked",
+      "remainingSeconds": [
+        1705473,
+        1705473
+      ]
+    },
+    {
+      "name": "Owner zone propagates to all viewers without moving deadline",
+      "result": "Worked",
+      "latencyMs": 4899.880000000005,
+      "zone": "America/New_York"
+    }
+  ],
+  "errors": [],
+  "result": "Failed",
+  "failure": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('iframe[title=\"Historical comment\"]').contentFrame().locator('#avatar[data-status=\"live\"]') to be visible\u001b[22m\n\n    at D:\\OneDrive\\Documents\\ChatGPT\\motion  pdrofile\\election-countdown\\tests\\e2e\\live-profile.mjs:108:104",
+  "finished": "2026-10-14T11:16:01.167Z",
+  "browser": "145.0.7632.6"
+}
