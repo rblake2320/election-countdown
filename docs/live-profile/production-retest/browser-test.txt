@@ -1,0 +1,9 @@
+PASS Existing test question and answer predate this deployment verification
+PASS Public profile visibly ticks in the deployed application
+PASS Earlier question and answer both visibly tick
+PASS Three public viewers share the current countdown despite different device zones
+PASS Logged-out visitor sees live avatars on the earlier question and answer
+PASS Owner zone update reaches already-open avatars without changing the deadline
+PASS Removing and relinking through settings updates both older placements
+PASS 35-second network outage falls back to initials and recovers to a ticking older answer
+PASS Fresh authenticated countdown settings renders a live owner preview

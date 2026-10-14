@@ -1,0 +1,225 @@
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 3190 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                     3.82 kB │ gzip:   1.18 kB
+../dist/public/assets/index-BhrVyLaS.css    116.86 kB │ gzip:  19.31 kB
+../dist/public/assets/index-CKBmPy_n.js   1,222.64 kB │ gzip: 367.44 kB
+✓ built in 4.47s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+published dist/public -> public (1 external script tag(s), 0 inline)
+
+ ⛅️ wrangler 4.59.2 (update available 4.151.0)
+──────────────────────────────────────────────
+✨ Compiled Worker successfully
+
+  dist\worker.js  708.9kb
+
+Done in 28ms
+vite v8.1.5 building client environment for production...
+[2K
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming...✓ 1277 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                              2.25 kB │ gzip:  0.77 kB
+dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2     10.25 kB
+dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2      11.23 kB
+dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2       18.74 kB
+dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2          18.99 kB
+dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2   25.96 kB
+dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2          48.25 kB
+dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2      85.06 kB
+dist/assets/index-bMM0xd6X.css                              42.45 kB │ gzip:  8.01 kB
+dist/assets/rolldown-runtime-NMqb_1LM.js                     0.69 kB │ gzip:  0.42 kB
+dist/assets/state-tNdC39m3.js                               36.10 kB │ gzip: 11.12 kB
+dist/assets/ui-CU4180iU.js                                  37.89 kB │ gzip:  7.59 kB
+dist/assets/utils-BIj3xgju.js                               54.94 kB │ gzip: 20.11 kB
+dist/assets/vendor-DYDQj1ul.js                             176.83 kB │ gzip: 58.74 kB
+dist/assets/index-04LpGAeH.js                              318.42 kB │ gzip: 82.55 kB
+
+✓ built in 1.67s
+ ⛅️ wrangler 4.123.0 (update available 4.151.0)
+───────────────────────────────────────────────
+[custom build] Running: npm run build:worker
+[custom build] 
+[custom build] > aihangout-platform@1.0.0 build:worker
+[custom build] > esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js
+[custom build] 
+[custom build] 
+[custom build] 
+[custom build]   dist\worker.js  708.9kb
+[custom build] 
+[custom build] Done in 26ms
+[custom build] 
+✨ Read 17 files from the assets directory D:\OneDrive\Documents\ChatGPT\motion  pdrofile\aihangout-platform\frontend\dist
+Total Upload: 722.33 KiB / gzip: 141.87 KiB
+Your Worker has access to the following bindings:
+Binding                                                  Resource                  
+env.AIHANGOUT_KV (9cd27d12b2c341b3a5b77f47b69a89c0)      KV Namespace              
+env.AIHANGOUT_DB (aihangout-database)                    D1 Database               
+env.ASSETS                                               Assets                    
+env.ENVIRONMENT ("production")                           Environment Variable      
+env.API_VERSION ("v1")                                   Environment Variable      
+env.BETA_MODE ("false")                                  Environment Variable      
+
+--dry-run: exiting now.
+
+ ⛅️ wrangler 4.59.2 (update available 4.151.0)
+──────────────────────────────────────────────
+Resource location: remote 
+
+▲ [WARNING] ⚠️ This process may take some time, during which your D1 database will be unavailable to serve queries.
+
+
+🌀 Executing on remote database election-countdown (47185562-ab95-41e9-a184-418ec3b0c1d0):
+🌀 To execute on your local development database, remove the --remote flag from your wrangler command.
+Note: if the execution fails to complete, your DB will return to its original state and you can safely retry.
+├ Checking if file needs uploading
+│
+🌀 File already uploaded. Processing.
+🌀 Starting import...
+🌀 Processed 1 queries.
+🚣 Executed 1 queries in 2.96ms (0 rows read, 0 rows written)
+   Database is currently at bookmark 000000d6-000000f2-00005104-79c56a9abb3efa457507815aae575bf3.
+[
+  {
+    "results": [
+      {
+        "Total queries executed": 1,
+        "Rows read": 0,
+        "Rows written": 0,
+        "Database size (MB)": "2.47"
+      }
+    ],
+    "success": true,
+    "finalBookmark": "000000d6-000000f2-00005104-79c56a9abb3efa457507815aae575bf3",
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "ATL",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 2.965
+      },
+      "duration": 2.965,
+      "changes": 1,
+      "last_row_id": 62,
+      "changed_db": true,
+      "size_after": 2469888,
+      "rows_read": 0,
+      "rows_written": 0,
+      "num_tables": 13,
+      "total_attempts": 1
+    }
+  }
+]
+
+ ⛅️ wrangler 4.59.2 (update available 4.151.0)
+──────────────────────────────────────────────
+✨ Compiled Worker successfully
+Uploading... (14/14)
+✨ Success! Uploaded 0 files (14 already uploaded) (0.41 sec)
+
+✨ Uploading _headers
+✨ Uploading _redirects
+✨ Uploading Functions bundle
+✨ Uploading _routes.json
+🌎 Deploying...
+✨ Deployment complete! Take a peek over at https://8f673448.election-countdown-38g.pages.dev
+
+ ⛅️ wrangler 4.123.0 (update available 4.151.0)
+───────────────────────────────────────────────
+Resource location: remote 
+
+▲ [WARNING] ⚠️ This process may take some time, during which your D1 database will be unavailable to serve queries.
+
+
+🌀 Executing on remote database aihangout-database (88deba8c-079c-412e-a41a-826e8916f334):
+🌀 To execute on your local development database, remove the --remote flag from your wrangler command.
+Note: if the execution fails to complete, your DB will return to its original state and you can safely retry.
+├ Checking if file needs uploading
+│
+🌀 File already uploaded. Processing.
+🌀 Starting import...
+🌀 Processed 1 queries.
+🚣 Executed 1 queries in 3.23ms (0 rows read, 0 rows written)
+   Database is currently at bookmark 0000308d-00000144-00005104-856ca7e2d7acfaad22155db5acc20848.
+[
+  {
+    "results": [
+      {
+        "Total queries executed": 1,
+        "Rows read": 0,
+        "Rows written": 0,
+        "Database size (MB)": "145.25"
+      }
+    ],
+    "success": true,
+    "finalBookmark": "0000308d-00000144-00005104-856ca7e2d7acfaad22155db5acc20848",
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "ATL",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 3.2286
+      },
+      "duration": 3.2286,
+      "changes": 1,
+      "last_row_id": 19890,
+      "changed_db": true,
+      "size_after": 145252352,
+      "rows_read": 0,
+      "rows_written": 0,
+      "num_tables": 53,
+      "total_attempts": 1
+    }
+  }
+]
+
+ ⛅️ wrangler 4.123.0 (update available 4.151.0)
+───────────────────────────────────────────────
+[custom build] Running: npm run build:worker
+[custom build] 
+[custom build] > aihangout-platform@1.0.0 build:worker
+[custom build] > esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js
+[custom build] 
+[custom build] 
+[custom build] 
+[custom build]   dist\worker.js  708.9kb
+[custom build] 
+[custom build] Done in 27ms
+[custom build] 
+🌀 Building list of assets...
+✨ Read 17 files from the assets directory D:\OneDrive\Documents\ChatGPT\motion  pdrofile\aihangout-platform\frontend\dist
+🌀 Starting asset upload...
+No updated asset files to upload. Proceeding with deployment...
+Total Upload: 722.33 KiB / gzip: 141.87 KiB
+Worker Startup Time: 3 ms
+Your Worker has access to the following bindings:
+Binding                                                  Resource                  
+env.AIHANGOUT_KV (9cd27d12b2c341b3a5b77f47b69a89c0)      KV Namespace              
+env.AIHANGOUT_DB (aihangout-database)                    D1 Database               
+env.ASSETS                                               Assets                    
+env.ENVIRONMENT ("production")                           Environment Variable      
+env.API_VERSION ("v1")                                   Environment Variable      
+env.BETA_MODE ("false")                                  Environment Variable      
+
+Uploaded aihangout-ai (5.28 sec)
+Deployed aihangout-ai triggers (2.04 sec)
+  aihangout.ai/* (zone name: aihangout.ai)
+  www.aihangout.ai/* (zone name: aihangout.ai)
+  schedule: 0 6 * * *
+Current Version ID: 45eaae7b-fd76-4462-a912-9d684c9d4911
+HTTP 200 https://electionclock.com/api/time
+HTTP 200 https://aihangout.ai/api/health
+HTTP 200 https://aihangout.ai/api/health/security
+Deployment health checks passed. Verify an owner-enabled public profile in real browsers before declaring public-host acceptance complete.

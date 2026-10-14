@@ -46,7 +46,7 @@ That command builds both applications, applies real AIHangout migrations to a di
 - `image-slot-chromium.json` and `image-slot-firefox.json`: actual image rendering with browser JavaScript disabled, independently decoded screenshot digits within a two-second freshness bound, visible-frame hashes, raw PNG frame counts/bytes/age and cancellation. The transport measurements cover one minute locally; they are not load tests or public-host measurements.
 - `aihangout-integration.json`: actual built AIHangout sign-in and settings, a live profile image, an answer created before opt-in, visible zone-label pixel change, network fallback/recovery, and removal.
 - `avatar-image.test.mjs`: independent PNG decompression verifies unchanged countdown digits versus changed zone-label pixels, event phases, and cancellation stopping background work.
-- Screenshots show local test accounts and fixtures, not production posts.
+- The original acceptance screenshots show local fixtures. The `production-*` screenshots and `production-retest/` capture the public test profile and its earlier question/answer.
 
 The initial cross-origin fixture timeout and subsequent test setup failures are retained separately. The intercepted host-page test was replaced with a real HTTP host. The device emulation conflict was removed, and the standalone runner now isolates each test database so account-creation limits stay enabled.
 
@@ -54,7 +54,7 @@ The timer test exposed early wakeups that emitted two frames for one second. The
 
 ## Shipping boundary
 
-This is a locally tested implementation, not a production deployment. Pages Functions compilation and AIHangout's production dry-run have been attempted separately. Production still requires the owner-authorized migration/deployment step followed by a real public-host browser check. A three-phone demonstration requires those physical devices; browser device-zone emulation is recorded separately from physical travel.
+Both applications were deployed with explicit owner approval on 2026-10-14. See `PRODUCTION-20261014.md` and `production-retest/` for public-host browser and streaming receipts. A three-phone demonstration still requires those physical devices; browser device-zone emulation is recorded separately from physical travel.
 
 Dependency installation reported existing audit findings (countdown: 5 high; AIHangout root: 2 moderate/6 high; AIHangout frontend: 3 moderate/11 high). This work adds no package dependency and makes no general security-readiness claim. The AIHangout whole-tree TypeScript check also encounters pre-existing JSX syntax in `frontend/src/utils/featureFlags.ts`; its built application, Worker/D1 suite and targeted integration are separate checks.
 

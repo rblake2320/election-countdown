@@ -1,5 +1,41 @@
 # Production test profile — 2026-10-14
 
+## Latest authorized redeployment and retest (12:31 PM America/Chicago)
+
+The owner's request to deploy both and check the live profile and old posts was
+executed again against the current committed source. Pages deployment:
+`8f673448`; AIHangout Worker version: `45eaae7b-fd76-4462-a912-9d684c9d4911`.
+The additive migrations succeeded, public health endpoints returned 200, and
+AIHangout's deployment verifier passed 15/15, including deployed asset identity.
+The public countdown HTML, CSS and JavaScript also matched local build hashes.
+
+`production-retest/acceptance.json` records nine successful live checks with no
+browser errors. The profile, existing question 290 and answer 179 visibly ticked;
+an anonymous visitor saw both old placements. Three viewers in different device
+zones had identical displayed remaining seconds and 39 ms estimated clock spread.
+Owner-zone changes reached already-open avatars without moving the deadline.
+Unlink/relink changed both earlier placements. A 35-second network outage showed
+initials, then recovered to a moving countdown. A fresh authenticated settings
+page rendered the owner's live preview. The original owner zone, reporting device
+and AIHangout link were restored and read back.
+
+The latest public stream receipt records 62 frames for 62 distinct seconds in
+60.9 seconds, 71,746 bytes, maximum measured frame age 134 ms, and zero independently
+decoded clock mismatches. Earlier receipts are retained separately.
+
+Reproduce the read-only public checks with `node tests/e2e/production-assets.mjs`
+and `node tests/e2e/production-stream.mjs`. The existing-test-account browser flow
+is `node tests/e2e/production-live-profile.mjs`; it requires that account's password
+in the process-only `LIVE_PROFILE_TEST_PASSWORD` environment variable. It creates
+no posts or accounts, temporarily changes only the guarded test identity's avatar
+settings, and restores them in `finally`. Do not run simultaneous writers to this
+test identity during acceptance.
+
+Screenshots and current machine receipts are in `production-retest/`. The
+original deployment record follows for historical comparison.
+
+## Original deployment record
+
 Owner authorized deployment and selection of a test identity. The profile uses the
 human account type and the clearly labeled username `live_countdown_test`; it is a
 test fixture, not a claim about a real person's identity. Registration used a
