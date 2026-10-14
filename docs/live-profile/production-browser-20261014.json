@@ -1,0 +1,27 @@
+{
+  "verifiedAt": "2026-10-14T17:04:03.514Z",
+  "result": "Worked",
+  "profileUrl": "https://aihangout.ai/profile/live_countdown_test",
+  "earlierAnswerUrl": "https://aihangout.ai/problem/290",
+  "ownerSettingsUrl": "https://electionclock.com/#/profile",
+  "ownerPreview": "2026 Midterm Elections: 19 days, 11:56:08 remaining. Owner zone America/Chicago. Nov 2, 11 PM CST",
+  "checks": {
+    "loginAndLink": true,
+    "earlierAnswerImagesBeforeLink": 0,
+    "earlierAnswerImagesAfterLink": 2,
+    "earlierAnswerImagesAfterRemoval": 0,
+    "earlierAnswerImagesAfterRelink": 2,
+    "avatarScreenshotPixelsChanged": true,
+    "correctedSetupLink": "https://electionclock.com/#/profile",
+    "ownerDeviceTakeover": true
+  },
+  "observations": [
+    "Initial owner iframe preview stayed blank; a fresh authenticated page load rendered it successfully. Browser console recorded an extension custom-element error."
+  ],
+  "screenshots": [
+    "production-profile-card-20261014.png",
+    "production-profile-20261014.png",
+    "production-prior-answer-20261014.png",
+    "production-owner-settings-20261014.png"
+  ]
+}

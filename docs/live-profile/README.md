@@ -1,5 +1,9 @@
 # Live profile countdown — local acceptance
 
+Update, 2026-10-14: the owner subsequently approved production deployment. See
+[production results and the human test profile](PRODUCTION-20261014.md).
+The local acceptance notes and original shipping boundary below are historical.
+
 The countdown can now be displayed as an opt-in profile image. Its event catalog and Eastern-time conversion come from the existing `client/src/lib/elections.ts`; there is no second event calendar.
 
 ## Use

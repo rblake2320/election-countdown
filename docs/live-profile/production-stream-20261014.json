@@ -1,0 +1,12 @@
+{
+  "started": "2026-10-14T17:00:09.450Z",
+  "url": "https://electionclock.com/api/live-profiles/d7d3e530-9b0b-4b54-a162-31dbc7445f3a.stream",
+  "frames": 62,
+  "bytes": 71673,
+  "maxFrameAgeMs": 80,
+  "decodedClockMismatches": 0,
+  "durationMs": 60076.1198,
+  "uniqueSeconds": 62,
+  "result": "Worked",
+  "finished": "2026-10-14T17:01:10.066Z"
+}
