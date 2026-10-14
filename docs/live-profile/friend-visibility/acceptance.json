@@ -1,0 +1,135 @@
+{
+  "started": "2026-10-14T18:54:37.048Z",
+  "owner": "live_countdown_test",
+  "profileUrl": "https://aihangout.ai/profile/live_countdown_test",
+  "postUrl": "https://aihangout.ai/problem/290",
+  "relationshipMeaning": "Mutual follows represent the requested friend; nonfriend has neither follow direction.",
+  "checks": [
+    {
+      "name": "friend browser sign-in",
+      "status": 200,
+      "result": "Worked"
+    },
+    {
+      "name": "nonfriend browser sign-in",
+      "status": 200,
+      "result": "Worked"
+    },
+    {
+      "name": "Two distinct viewer accounts: mutual follow and no relationship",
+      "result": "Worked",
+      "relationships": {
+        "friendToOwner": true,
+        "ownerToFriend": true,
+        "nonfriendToOwner": false,
+        "ownerToNonfriend": false
+      }
+    },
+    {
+      "name": "Friend and nonfriend see ticking avatars on profile, existing question and answer",
+      "result": "Worked",
+      "motion": [
+        {
+          "viewer": "friend",
+          "surface": "profile",
+          "uniqueFrames": 4
+        },
+        {
+          "viewer": "friend",
+          "surface": "question",
+          "uniqueFrames": 4
+        },
+        {
+          "viewer": "friend",
+          "surface": "answer",
+          "uniqueFrames": 4
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "profile",
+          "uniqueFrames": 4
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "question",
+          "uniqueFrames": 4
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "answer",
+          "uniqueFrames": 4
+        }
+      ]
+    },
+    {
+      "name": "Owner zone change visibly reaches all six mounted avatars without reloading",
+      "result": "Worked",
+      "ownerZone": "America/New_York",
+      "deadlineUnchanged": true,
+      "observations": [
+        {
+          "viewer": "friend",
+          "surface": "profile",
+          "observedWithinMs": 5782.7264
+        },
+        {
+          "viewer": "friend",
+          "surface": "question",
+          "observedWithinMs": 5815.677
+        },
+        {
+          "viewer": "friend",
+          "surface": "answer",
+          "observedWithinMs": 5849.8276000000005
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "profile",
+          "observedWithinMs": 5882.8269
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "question",
+          "observedWithinMs": 5915.769
+        },
+        {
+          "viewer": "nonfriend",
+          "surface": "answer",
+          "observedWithinMs": 5949.693500000001
+        }
+      ]
+    },
+    {
+      "name": "Turning the owner countdown off removes live images for both relationships",
+      "result": "Worked",
+      "observedWithinMs": 15332.261599999998
+    },
+    {
+      "name": "Turning it back on restores both viewers without page reload",
+      "result": "Worked",
+      "observedWithinMs": 30062.17850000001
+    },
+    {
+      "name": "Friend and nonfriend relationships remain distinct after the display changes",
+      "result": "Worked"
+    }
+  ],
+  "errors": [],
+  "accounts": [
+    {
+      "role": "friend",
+      "username": "countdown_friend_test",
+      "id": 310,
+      "profileUrl": "https://aihangout.ai/profile/countdown_friend_test"
+    },
+    {
+      "role": "nonfriend",
+      "username": "countdown_stranger_test",
+      "id": 311,
+      "profileUrl": "https://aihangout.ai/profile/countdown_stranger_test"
+    }
+  ],
+  "result": "Worked",
+  "restoration": "Worked",
+  "finished": "2026-10-14T18:55:48.101Z"
+}

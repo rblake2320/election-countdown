@@ -1,0 +1,38 @@
+{
+  "started": "2026-10-14T18:52:14.608Z",
+  "owner": "live_countdown_test",
+  "profileUrl": "https://aihangout.ai/profile/live_countdown_test",
+  "postUrl": "https://aihangout.ai/problem/290",
+  "relationshipMeaning": "Mutual follows represent the requested friend; nonfriend has neither follow direction.",
+  "checks": [
+    {
+      "name": "Two distinct viewer accounts: mutual follow and no relationship",
+      "result": "Worked",
+      "relationships": {
+        "friendToOwner": true,
+        "ownerToFriend": true,
+        "nonfriendToOwner": false,
+        "ownerToNonfriend": false
+      }
+    }
+  ],
+  "errors": [],
+  "accounts": [
+    {
+      "role": "friend",
+      "username": "countdown_friend_test",
+      "id": 310,
+      "profileUrl": "https://aihangout.ai/profile/countdown_friend_test"
+    },
+    {
+      "role": "nonfriend",
+      "username": "countdown_stranger_test",
+      "id": 311,
+      "profileUrl": "https://aihangout.ai/profile/countdown_stranger_test"
+    }
+  ],
+  "result": "Failed",
+  "failure": "locator.waitFor: Error: strict mode violation: getByRole('button', { name: 'Follow', exact: true }) resolved to 2 elements:\n    1) <button aria-label=\"Follow\" class=\"inline-flex items-center space-x-1 rounded-full font-medium transition-colors px-3 py-1.5 text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50\">…</button> aka getByRole('button', { name: 'Follow' }).first()\n    2) <button aria-label=\"Follow\" class=\"inline-flex items-center space-x-1 rounded-full font-medium transition-colors px-2 py-1 text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50\">…</button> aka getByRole('button', { name: 'Follow' }).nth(3)\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Follow', exact: true }) to be visible\u001b[22m\n\n    at D:\\OneDrive\\Documents\\ChatGPT\\motion  pdrofile\\election-countdown\\tests\\e2e\\production-friend-visibility.mjs:69:97",
+  "restoration": "Worked",
+  "finished": "2026-10-14T18:52:24.484Z"
+}

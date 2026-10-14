@@ -1,0 +1,38 @@
+{
+  "started": "2026-10-14T18:52:57.390Z",
+  "owner": "live_countdown_test",
+  "profileUrl": "https://aihangout.ai/profile/live_countdown_test",
+  "postUrl": "https://aihangout.ai/problem/290",
+  "relationshipMeaning": "Mutual follows represent the requested friend; nonfriend has neither follow direction.",
+  "checks": [
+    {
+      "name": "Two distinct viewer accounts: mutual follow and no relationship",
+      "result": "Worked",
+      "relationships": {
+        "friendToOwner": true,
+        "ownerToFriend": true,
+        "nonfriendToOwner": false,
+        "ownerToNonfriend": false
+      }
+    }
+  ],
+  "errors": [],
+  "accounts": [
+    {
+      "role": "friend",
+      "username": "countdown_friend_test",
+      "id": 310,
+      "profileUrl": "https://aihangout.ai/profile/countdown_friend_test"
+    },
+    {
+      "role": "nonfriend",
+      "username": "countdown_stranger_test",
+      "id": 311,
+      "profileUrl": "https://aihangout.ai/profile/countdown_stranger_test"
+    }
+  ],
+  "result": "Failed",
+  "failure": "page.waitForURL: Timeout 30000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"https://aihangout.ai/\" until \"load\"\n============================================================\n    at D:\\OneDrive\\Documents\\ChatGPT\\motion  pdrofile\\election-countdown\\tests\\e2e\\production-friend-visibility.mjs:66:83",
+  "restoration": "Worked",
+  "finished": "2026-10-14T18:53:36.946Z"
+}
