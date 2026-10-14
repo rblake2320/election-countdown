@@ -1,0 +1,84 @@
+{
+  "started": "2026-10-14T16:40:33.182Z",
+  "base": "http://127.0.0.1:55946",
+  "checks": [
+    {
+      "name": "Authentication, CSRF, malformed input, public-data minimization and owner isolation",
+      "result": "Worked",
+      "targetUtc": "2026-11-03T05:00:00.000Z"
+    },
+    {
+      "name": "Stale retries, reporter handover and concurrent compare-and-swap",
+      "result": "Worked",
+      "version": 3
+    },
+    {
+      "name": "Three viewers, late join, different zones and +5-minute device clock",
+      "result": "Worked",
+      "clockSpreadMs": 79.749755859375,
+      "remainingSeconds": [
+        1685964,
+        1685964,
+        1685964
+      ]
+    },
+    {
+      "name": "30-second renderer freeze and immediate catch-up",
+      "result": "Worked",
+      "remainingSeconds": [
+        1685934,
+        1685934
+      ]
+    },
+    {
+      "name": "Owner zone propagates to all viewers without moving deadline",
+      "result": "Worked",
+      "latencyMs": 4956.9002,
+      "zone": "America/New_York"
+    },
+    {
+      "name": "Cross-origin iframe and historical-placement fixture",
+      "result": "Worked",
+      "screenshot": "docs/live-profile/cross-origin-placements.png",
+      "hosting": "separate local origin; not production AIHangout"
+    },
+    {
+      "name": "Circular avatar at 32, 40, 64 and 128 pixels",
+      "result": "Worked",
+      "overflowPixels": 0
+    },
+    {
+      "name": "Owner settings and actual Intl zone reporter",
+      "result": "Worked",
+      "zone": "America/Denver",
+      "mechanism": "Chromium device-zone emulation + focus return; not physical travel"
+    },
+    {
+      "name": "95-second network outage, stale display and reconnection",
+      "result": "Worked",
+      "remainingSeconds": [
+        1685829,
+        1685829
+      ]
+    },
+    {
+      "name": "Opt-out removes public display; opt-in restores the same stable link",
+      "result": "Worked",
+      "version": 8
+    },
+    {
+      "name": "Account deletion removes its live profile",
+      "result": "Worked"
+    },
+    {
+      "name": "Workerd restart with retained D1 state",
+      "result": "Worked",
+      "version": 8
+    }
+  ],
+  "errors": [],
+  "result": "Worked",
+  "finished": "2026-10-14T16:43:00.222Z",
+  "browser": "145.0.7632.6",
+  "runtimeLogs": "D:\\OneDrive\\Documents\\ChatGPT\\motion  pdrofile\\election-countdown\\.local\\live-1791996021719\\server.log"
+}

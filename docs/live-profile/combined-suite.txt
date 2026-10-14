@@ -1,0 +1,41 @@
+✔ zone affects the zone label pixels while a fixed deadline keeps the digits identical (33.4967ms)
+✔ upcoming, event day, finished and disabled frames are distinct valid PNGs (6.5644ms)
+✔ cancelling the stream stops pending frame generation and state reads (5507.9073ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5608.6555
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 3190 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                     3.82 kB │ gzip:   1.18 kB
+../dist/public/assets/index-BhrVyLaS.css    116.86 kB │ gzip:  19.31 kB
+../dist/public/assets/index-CKBmPy_n.js   1,222.64 kB │ gzip: 367.44 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.88s
+published dist/public -> public (1 external script tag(s), 0 inline)
+PASS Authentication, CSRF, malformed input, public-data minimization and owner isolation
+PASS Stale retries, reporter handover and concurrent compare-and-swap
+PASS Three viewers, late join, different zones and +5-minute device clock
+PASS 30-second renderer freeze and immediate catch-up
+PASS Owner zone propagates to all viewers without moving deadline
+PASS Cross-origin iframe and historical-placement fixture
+PASS Circular avatar at 32, 40, 64 and 128 pixels
+PASS Owner settings and actual Intl zone reporter
+PASS 95-second network outage, stale display and reconnection
+PASS Opt-out removes public display; opt-in restores the same stable link
+PASS Account deletion removes its live profile
+PASS Workerd restart with retained D1 state
+PASS image read rate limit and independent active control
+{"embedStatus":200,"embedFinalUrl":"http://127.0.0.1:55946/embed","embedCsp":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors *","embedXfo":null,"embedJsStatus":200,"homeXfo":"DENY","homeCsp":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'","dates":{"midterm-2026":{"ts":{"start":"2026-11-03T00:00:00","end":"2026-11-04T01:00:00"},"js":{"start":"2026-11-03T00:00:00","end":"2026-11-04T01:00:00"}},"presidential-2028":{"ts":{"start":"2028-11-07T00:00:00","end":"2028-11-08T01:00:00"},"js":{"start":"2028-11-07T00:00:00","end":"2028-11-08T01:00:00"}}},"fieldsNumeric":true,"fieldsChanged":true,"defaultTitle":"2026 Midterm Elections","smallOverflow":{"x":0,"y":0},"link":{"href":"https://electionclock.com","target":"_blank","rel":"noopener","text":"electionclock.com"},"title2028":"2028 Presidential Election","darkTheme":"dark","largeOverflow":0,"todayText":"Today is Election Day","todayVisible":true,"countsHiddenOnToday":true,"pastFallsThrough":"2028 Presidential Election","iframeTitle":"Election Countdown","iframeFields":["19","12","15","36"],"iframeVisible":true,"appFrameUrls":["chrome-error://chromewebdata/"],"snippetShown":"<iframe src=\"http://127.0.0.1:55946/embed.html?election=midterm-2026\" width=\"320\" height=\"140\" style=\"border:0\" title=\"Election Countdown\" loading=\"lazy\"></iframe>","clipboard":"<iframe src=\"http://127.0.0.1:55946/embed.html?election=midterm-2026\" width=\"320\" height=\"140\" style=\"border:0\" title=\"Election Countdown\" loading=\"lazy\"></iframe>","copiedLabel":"Copied!","pageErrors":[]}
+EMBED WIDGET TEST PASSED

@@ -28,3 +28,16 @@
 
 /data/*
   Cache-Control: public, max-age=3600
+
+# Public read-only live avatar; owner settings remain protected by the app's default headers.
+/live-avatar.html
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  Cache-Control: no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors *
+
+/live-avatar
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  Cache-Control: no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors *

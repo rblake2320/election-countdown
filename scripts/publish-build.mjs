@@ -7,13 +7,13 @@
 // must not contain any inline <script>. The build fails instead of shipping a page the CSP blocks.
 //
 // Usage: npm run build:site
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 
 const built = "dist/public";
 const published = "public";
 
-execSync("npx vite build", { stdio: "inherit" });
+execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build"], { stdio: "inherit" });
 
 const html = readFileSync(`${built}/index.html`, "utf8");
 const scripts = html.match(/<script\b[^>]*>/g) || [];

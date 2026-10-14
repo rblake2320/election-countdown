@@ -1,0 +1,34 @@
+{
+  "started": "2026-10-14T11:29:32.115Z",
+  "checks": [
+    {
+      "name": "Actual AIHangout login, settings and moving image under existing CSP",
+      "result": "Worked"
+    },
+    {
+      "name": "Current AIHangout public profile displays the linked stream",
+      "result": "Worked"
+    },
+    {
+      "name": "Answer created before opt-in resolves the current live avatar",
+      "result": "Worked",
+      "problemId": 1
+    },
+    {
+      "name": "Owner zone change reaches the visible zone-label pixels on the mounted answer",
+      "result": "Worked",
+      "ownerZone": "America/New_York"
+    },
+    {
+      "name": "Broken AIHangout image falls back to initials and reconnects after network recovery",
+      "result": "Worked"
+    },
+    {
+      "name": "Removing link restores initials on the older answer",
+      "result": "Worked"
+    }
+  ],
+  "errors": [],
+  "result": "Worked",
+  "finished": "2026-10-14T11:30:21.452Z"
+}

@@ -1,0 +1,68 @@
+{
+  "base": "http://127.0.0.1:55946",
+  "started": "2026-10-14T16:43:03.392Z",
+  "checks": [
+    {
+      "name": "Plain cross-origin image with JavaScript disabled",
+      "result": "Worked",
+      "browser": "145.0.7632.6",
+      "uniqueFrames": 6,
+      "observations": [
+        {
+          "visibleClockSeconds": 44216,
+          "expectedSeconds": 44214,
+          "lagSeconds": 2
+        },
+        {
+          "visibleClockSeconds": 44214,
+          "expectedSeconds": 44213,
+          "lagSeconds": 1
+        },
+        {
+          "visibleClockSeconds": 44212,
+          "expectedSeconds": 44211,
+          "lagSeconds": 1
+        },
+        {
+          "visibleClockSeconds": 44211,
+          "expectedSeconds": 44210,
+          "lagSeconds": 1
+        },
+        {
+          "visibleClockSeconds": 44210,
+          "expectedSeconds": 44209,
+          "lagSeconds": 1
+        },
+        {
+          "visibleClockSeconds": 44208,
+          "expectedSeconds": 44207,
+          "lagSeconds": 1
+        }
+      ],
+      "hashes": [
+        "943ff3a19ec5ab664bb54dd4b5c2150e5f60d5e148b894fb813b51d8a6d9a46a",
+        "d84b9569d18db03a1eb91b16411d8e3ef66fff7976cf8cba486d8081e70c09cd",
+        "8697ec8d33f1a99829ae0bada91fd55611d70a52bc8b3c56968f661ee6332bbb",
+        "2236286d7b3fe769626de123d07a45fec3462ba8029bc3c8837b55ed15728105",
+        "07446133717a7ddaec18e2a41a82b6208e054f8fad70eb2ee597ac4d15328c9a",
+        "ca3406ff891dd2ec08e356d8df2c8204ba80d8719f02b1f9b1c489b2afad9dbc"
+      ]
+    },
+    {
+      "name": "One-minute frame delivery and client cancellation",
+      "result": "Worked",
+      "frames": 61,
+      "bytes": 70386,
+      "maxFrameAgeMs": 6,
+      "durationMs": 60708.06109999999
+    }
+  ],
+  "measurement": {
+    "frames": 61,
+    "uniqueSeconds": 61,
+    "bytes": 70386,
+    "maxFrameAgeMs": 6,
+    "durationMs": 60708.0015
+  },
+  "result": "Worked"
+}
